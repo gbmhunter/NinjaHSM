@@ -1,19 +1,8 @@
-namespace NinjaHsm {
+#pragma once
 
-class State {
+#include <functional>
 
-};
+#include "State.hpp"
+#include "StateMachine.hpp"
 
-class StateMachine {
-public:
-    StateMachine();
-    ~StateMachine();
-
-    void addState(State state);
-
-
-    void transitionTo(State state);
-};
-
-};
 
