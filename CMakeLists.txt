@@ -17,7 +17,7 @@ FetchContent_MakeAvailable(googletest)
 
 
 include_directories(src)
-add_library(NinjaHsm src/StateMachine.cpp src/State.cpp)
+add_library(NinjaHsm src/State.cpp)
 target_include_directories(NinjaHsm PUBLIC src)
 # add_executable(NinjaHsm src/NinjaHsm.hpp)
 

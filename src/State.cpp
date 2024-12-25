@@ -4,7 +4,7 @@
 
 namespace NinjaHsm {
 
-State::State(const char * name, std::function<void()> entry, std::function<void()> event, std::function<void()> exit) : name(name), entry(entry), event(event), exit(exit) {
+State::State(const char * name, std::function<void()> entry, std::function<void()> event, std::function<void()> exit, State * parent) : name(name), entry(entry), event(event), exit(exit), parent(parent) {
 }
 
 } // namespace NinjaHsm

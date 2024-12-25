@@ -2,9 +2,22 @@
 
 #include "NinjaHsm.hpp"
 
-class TestHsm : public NinjaHsm::StateMachine {
+class TestEvent {
 public:
-    TestHsm() : state1("State1", std::bind(&TestHsm::State1_Entry, this), std::bind(&TestHsm::State1_Event, this), std::bind(&TestHsm::State1_Exit, this)) {
+  TestEvent(int value) : value(value) {}
+  int value;
+};
+
+class TestHsm : public NinjaHsm::StateMachine<TestEvent> {
+public:
+    TestHsm() : 
+      state1(
+        "State1",
+        std::bind(&TestHsm::State1_Entry, this),
+        std::bind(&TestHsm::State1_Event, this),
+        std::bind(&TestHsm::State1_Exit, this),
+        nullptr
+      ) {
       addState(state1);
     }
 
