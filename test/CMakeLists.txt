@@ -8,6 +8,7 @@ target_link_libraries(
   hello_test
   NinjaHsm
   GTest::gtest_main
+  gmock_main
 )
 
 include(GoogleTest)
