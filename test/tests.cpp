@@ -4,10 +4,14 @@
 
 #include "NinjaHsm.hpp"
 
+enum class EventId {
+    GO_TO_STATE_2,
+};
+
 class TestEvent {
 public:
-  TestEvent(int value) : value(value) {}
-  int value;
+  TestEvent(EventId id) : id(id) {}
+  EventId id;
 };
 
 class TestHsm : public NinjaHsm::StateMachine<TestEvent> {
@@ -16,14 +20,14 @@ public:
       state1(
         "State1",
         std::bind(&TestHsm::State1_Entry, this),
-        std::bind(&TestHsm::State1_Event, this),
+        std::bind(&TestHsm::State1_Event, this, std::placeholders::_1),
         std::bind(&TestHsm::State1_Exit, this),
         nullptr
       ),
       state2(
         "State2",
         std::bind(&TestHsm::State2_Entry, this),
-        std::bind(&TestHsm::State2_Event, this),
+        std::bind(&TestHsm::State2_Event, this, std::placeholders::_1),
         std::bind(&TestHsm::State2_Exit, this),
         nullptr
       ) {
@@ -31,8 +35,8 @@ public:
       addState(&state2);
     }
 
-    NinjaHsm::State state1;
-    NinjaHsm::State state2;
+    NinjaHsm::State<TestEvent> state1;
+    NinjaHsm::State<TestEvent> state2;
 
 private:
 
@@ -40,7 +44,7 @@ private:
         std::cout << "State1_Entry" << std::endl;
     }
 
-    virtual void State1_Event() {
+    virtual void State1_Event(const TestEvent * event) {
         std::cout << "State1_Event" << std::endl;
     }
 
@@ -52,7 +56,7 @@ private:
         std::cout << "State2_Entry" << std::endl;
     }
 
-    virtual void State2_Event() {
+    virtual void State2_Event(const TestEvent * event) {
         std::cout << "State2_Event" << std::endl;
     }
 

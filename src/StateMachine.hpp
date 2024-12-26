@@ -11,13 +11,13 @@ public:
         states.fill(nullptr);
     }
 
-    void addState(State * state) {
+    void addState(State<Event> * state) {
         std::cout << "Adding state at index: " << numStates << std::endl;
         states[numStates] = state;
         numStates++;
     }
 
-    void initialTransitionTo(State * state) {
+    void initialTransitionTo(State<Event> * state) {
         transitionTo(state);
     }
 
@@ -25,23 +25,23 @@ public:
         currentState->event();
     }
 
-    State* getCurrentState() {
+    State<Event>* getCurrentState() {
         return currentState;
     }
 
 private:
 
-    std::array<State*, 10> states;
+    std::array<State<Event>*, 10> states;
 
     std::size_t numStates = 0;
 
-    State* currentState = nullptr;
+    State<Event>* currentState = nullptr;
 
     /**
      * @brief Trigger a transition to a state.
      * @param state The state to transition to.
      */
-    void transitionTo(State * state) {
+    void transitionTo(State<Event> * state) {
         std::cout << "transitionTo() called." << std::endl;
         if (currentState == nullptr) {
             std::cout << "Current state is null. Transitioning to initial state." << std::endl;
@@ -49,7 +49,7 @@ private:
         std::cout << "Destination state: " << state->name << std::endl;
 
         // Rename just for readability below
-        State* destinationState = state;
+        State<Event>* destinationState = state;
 
         while (currentState != destinationState) {
             if (currentState == nullptr) {
@@ -76,7 +76,7 @@ private:
             //     return;
             // }
 
-            State* stateInDestinationBranch = destinationState;
+            State<Event>* stateInDestinationBranch = destinationState;
             while (stateInDestinationBranch->parent != nullptr) {
                 if (stateInDestinationBranch->parent == currentState) {
                     // We've found the current state in the destination branch.
