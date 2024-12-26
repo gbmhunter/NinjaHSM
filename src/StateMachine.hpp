@@ -22,14 +22,14 @@ public:
     }
 
     void handleEvent(Event * event) {
-        currentState->event();
+        currentState->event(event);
     }
 
     State<Event>* getCurrentState() {
         return currentState;
     }
 
-private:
+protected:
 
     std::array<State<Event>*, 10> states;
 
@@ -91,9 +91,19 @@ private:
             }
 
             // If we get here, we didn't find the current state in the destination branch.
-            if (currentState == nullptr || currentState->parent == nullptr) {
+            if (currentState == nullptr)  {
                 std::cout << "Current state is null or has no parent. Transitioning to top most parent of destination state." << std::endl;
                 // Transition to the top most parent of the destination state.
+                // No exit of current state because there is no current state!
+                stateInDestinationBranch->entry();
+                currentState = stateInDestinationBranch;
+                break;
+            }
+
+            if (currentState->parent == nullptr) {
+                std::cout << "Current state has no parent. Transitioning to top most parent of destination state." << std::endl;
+                // Transition to the top most parent of the destination state.
+                currentState->exit();
                 stateInDestinationBranch->entry();
                 currentState = stateInDestinationBranch;
                 break;
