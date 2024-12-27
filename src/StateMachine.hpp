@@ -77,17 +77,23 @@ protected:
             // }
 
             State<Event>* stateInDestinationBranch = destinationState;
+            bool foundCurrentStateInDestinationBranch = false;
             while (stateInDestinationBranch->parent != nullptr) {
                 if (stateInDestinationBranch->parent == currentState) {
                     // We've found the current state in the destination branch.
                     // Move down one state.
                     std::cout << "Found current state in destination branch. Moving down one state to: " << stateInDestinationBranch->name << std::endl;
-                    currentState->exit();
+                    // currentState->exit();
                     stateInDestinationBranch->entry();
                     currentState = stateInDestinationBranch;
+                    foundCurrentStateInDestinationBranch = true;
                     break;
                 }
                 stateInDestinationBranch = stateInDestinationBranch->parent;
+            }
+
+            if (foundCurrentStateInDestinationBranch) {
+                break;
             }
 
             // If we get here, we didn't find the current state in the destination branch.
@@ -111,7 +117,9 @@ protected:
 
             // If we get here, we need to transition to the parent of the current state.
             currentState->exit();
-            currentState->parent->entry();
+            // Don't need call entry(), it's a parent of the current state so we are
+            // already in it.
+            // currentState->parent->entry();
             currentState = currentState->parent;
         }
 

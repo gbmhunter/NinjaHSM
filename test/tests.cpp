@@ -5,6 +5,7 @@
 #include "NinjaHsm.hpp"
 
 enum class EventId {
+    GO_TO_STATE_1A,
     GO_TO_STATE_2,
 };
 
@@ -18,29 +19,42 @@ class TestHsm : public NinjaHsm::StateMachine<TestEvent> {
 public:
     TestHsm() : 
       state1(
-        "State1",
-        std::bind(&TestHsm::State1_Entry, this),
-        std::bind(&TestHsm::State1_Event, this, std::placeholders::_1),
-        std::bind(&TestHsm::State1_Exit, this),
-        nullptr
+            "State1",
+            std::bind(&TestHsm::state1_entry, this),
+            std::bind(&TestHsm::state1_event, this, std::placeholders::_1),
+            std::bind(&TestHsm::state1_exit, this),
+            nullptr
+      ),
+      state1A(
+        "State1A",
+        std::bind(&TestHsm::state1a_entry, this),
+        std::bind(&TestHsm::state1a_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state1a_exit, this),
+        &state1
       ),
       state2(
         "State2",
-        std::bind(&TestHsm::State2_Entry, this),
-        std::bind(&TestHsm::State2_Event, this, std::placeholders::_1),
-        std::bind(&TestHsm::State2_Exit, this),
+        std::bind(&TestHsm::state2_entry, this),
+        std::bind(&TestHsm::state2_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state2_exit, this),
         nullptr
       ) {
-      addState(&state1);
-      addState(&state2);
+        addState(&state1);
+        addState(&state1A);
+        addState(&state2);
     }
 
     NinjaHsm::State<TestEvent> state1;
+    NinjaHsm::State<TestEvent> state1A;
     NinjaHsm::State<TestEvent> state2;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
     uint32_t state1ExitCallCount = 0;
+
+    uint32_t state1aEntryCallCount = 0;
+    uint32_t state1aEventCallCount = 0;
+    uint32_t state1aExitCallCount = 0;
 
     uint32_t state2EntryCallCount = 0;
     uint32_t state2EventCallCount = 0;
@@ -48,46 +62,77 @@ public:
 
 private:
 
-    virtual void State1_Entry() {
-        std::cout << "State1_Entry" << std::endl;
+    //========================================================================//
+    // state1
+    //========================================================================//
+
+    virtual void state1_entry() {
+        std::cout << "state1_entry" << std::endl;
         state1EntryCallCount++;
     }
 
-    virtual void State1_Event(const TestEvent * event) {
-        std::cout << "State1_Event" << std::endl;
+    virtual void state1_event(const TestEvent * event) {
+        std::cout << "state1_event" << std::endl;
 
-        if (event->id == EventId::GO_TO_STATE_2) {
-            transitionTo(&state2);
+        if (event->id == EventId::GO_TO_STATE_1A) {
+            transitionTo(&state1A);
         }
         state1EventCallCount++;
     }
 
-    virtual void State1_Exit() {
-        std::cout << "State1_Exit" << std::endl;
+    virtual void state1_exit() {
+        std::cout << "state1_exit" << std::endl;
         state1ExitCallCount++;
     }
 
-    virtual void State2_Entry() {
-        std::cout << "State2_Entry" << std::endl;
+    //========================================================================//
+    // state1/state1a
+    //========================================================================//
+
+    virtual void state1a_entry() {
+        std::cout << "state1a_entry" << std::endl;
+        state1aEntryCallCount++;
+    }
+
+    virtual void state1a_event(const TestEvent * event) {
+        std::cout << "state1a_event" << std::endl;
+
+        if (event->id == EventId::GO_TO_STATE_2) {
+            transitionTo(&state2);
+        }
+        state1aEventCallCount++;
+    }
+
+    virtual void state1a_exit() {
+        std::cout << "state1a_exit" << std::endl;
+        state1aExitCallCount++;
+    }
+
+    //========================================================================//
+    // state2
+    //========================================================================//
+
+    virtual void state2_entry() {
+        std::cout << "state2_entry" << std::endl;
         state2EntryCallCount++;
     }
 
-    virtual void State2_Event(const TestEvent * event) {
-        std::cout << "State2_Event" << std::endl;
+    virtual void state2_event(const TestEvent * event) {
+        std::cout << "state2_event" << std::endl;
         state2EventCallCount++;
     }
 
-    virtual void State2_Exit() {
-        std::cout << "State2_Exit" << std::endl;
+    virtual void state2_exit() {
+        std::cout << "state2_exit" << std::endl;
         state2ExitCallCount++;
     }
 };
 
 // class MockTestHsm : public TestHsm {
 // public:
-//     MOCK_METHOD0(State1_Entry, void());
-//     MOCK_METHOD0(State1_Event, void());
-//     MOCK_METHOD0(State1_Exit, void());
+//     MOCK_METHOD0(state1_entry, void());
+//     MOCK_METHOD0(state1_event, void());
+//     MOCK_METHOD0(state1_exit, void());
 // };
 
 // Demonstrate some basic assertions.
@@ -102,9 +147,21 @@ TEST(HelloTest, BasicAssertions) {
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
     EXPECT_EQ(hsm.state1EntryCallCount, 1);
 
+    // Send event to transition to state1A
+    {
+        TestEvent event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state1A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1A);
+    EXPECT_EQ(hsm.state1aEntryCallCount, 1);
+
     // Send event to transition to state2
-    TestEvent event(EventId::GO_TO_STATE_2);
-    hsm.handleEvent(&event);
+    {
+        TestEvent event(EventId::GO_TO_STATE_2);
+        hsm.handleEvent(&event);
+    }
 
     // Make sure we are in state2
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state2);
