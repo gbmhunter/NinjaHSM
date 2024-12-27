@@ -51,6 +51,12 @@ protected:
         // Rename just for readability below
         State<Event>* destinationState = state;
 
+        if (currentState == destinationState) {
+            std::cout << "Current state is the same as the destination state. Exiting and entering again." << std::endl;
+            currentState->exit();
+            currentState->entry();
+        }
+
         while (currentState != destinationState) {
             if (currentState == nullptr) {
                 std::cout << "Current state is null." << std::endl;

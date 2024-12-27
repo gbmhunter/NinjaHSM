@@ -5,6 +5,7 @@
 #include "NinjaHsm.hpp"
 
 enum class EventId {
+    GO_TO_STATE_1,
     GO_TO_STATE_1A,
     GO_TO_STATE_2,
 };
@@ -74,7 +75,10 @@ private:
     virtual void state1_event(const TestEvent * event) {
         std::cout << "state1_event" << std::endl;
 
-        if (event->id == EventId::GO_TO_STATE_1A) {
+        if (event->id == EventId::GO_TO_STATE_1) {
+            transitionTo(&state1);
+        }
+        else if (event->id == EventId::GO_TO_STATE_1A) {
             transitionTo(&state1A);
         }
         state1EventCallCount++;
@@ -136,7 +140,7 @@ private:
 // };
 
 // Demonstrate some basic assertions.
-TEST(HelloTest, BasicAssertions) {
+TEST(HsmTests, ChildStateTransitionsWork) {
     // Create test HSM
     TestHsm hsm;
 
@@ -155,6 +159,7 @@ TEST(HelloTest, BasicAssertions) {
 
     // Make sure we are in state1A
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1A);
+    EXPECT_EQ(hsm.state1ExitCallCount, 0); // Should not have exited state1
     EXPECT_EQ(hsm.state1aEntryCallCount, 1);
 
     // Send event to transition to state2
@@ -167,4 +172,27 @@ TEST(HelloTest, BasicAssertions) {
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state2);
     EXPECT_EQ(hsm.state1ExitCallCount, 1);
     EXPECT_EQ(hsm.state2EntryCallCount, 1);
+}
+
+TEST(HsmTests, TransitionToSameStateCallsExitEntryAgain) {
+    // Create test HSM
+    TestHsm hsm;
+
+    // Transition to state
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to same state
+    {
+        TestEvent event(EventId::GO_TO_STATE_1);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are still in state1, but the exit and entry were called again
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1ExitCallCount, 1); 
+    EXPECT_EQ(hsm.state1EntryCallCount, 2);
 }
