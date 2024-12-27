@@ -22,11 +22,27 @@ public:
     }
 
     void handleEvent(Event * event) {
-        currentState->event(event);
+        // The event handler could call transitionTo() to change the state, and/or
+        // call eventHandled() to indicate that the event was handled. If any of these
+        // occur, we do not want to propagate the event to the parent state.
+        transitionToCalled = false;
+        eventHandledCalled = false;
+        State<Event>* stateToHandleEvent = currentState;
+        while (stateToHandleEvent != nullptr) {
+            stateToHandleEvent->event(event);
+            if (transitionToCalled || eventHandledCalled) {
+                break;
+            }
+            stateToHandleEvent = stateToHandleEvent->parent;
+        }
     }
 
     State<Event>* getCurrentState() {
         return currentState;
+    }
+
+    void eventHandled() {
+        eventHandledCalled = true;
     }
 
 protected:
@@ -37,12 +53,17 @@ protected:
 
     State<Event>* currentState = nullptr;
 
+    bool transitionToCalled = false;
+
+    bool eventHandledCalled = false;
+
     /**
      * @brief Trigger a transition to a state.
      * @param state The state to transition to.
      */
     void transitionTo(State<Event> * state) {
         std::cout << "transitionTo() called." << std::endl;
+        transitionToCalled = true;
         if (currentState == nullptr) {
             std::cout << "Current state is null. Transitioning to initial state." << std::endl;
         }
@@ -69,19 +90,6 @@ protected:
             // state and all of it's parents. If the current state is found,
             // Move down one state. If the current state is not found there, we
             // need to move to the current state's parent
-            // If current state is null, this means this is the initial transition.
-            // if (currentState == nullptr) {
-            //     currentState = state;
-            //     currentState->entry();
-            // }
-
-            // 
-            // if (currentState == destinationState) {
-            //     // We've arrived at the destination state.
-            //     std::cout << "Arrived at destination state: " << destinationState->name << std::endl;
-            //     return;
-            // }
-
             State<Event>* stateInDestinationBranch = destinationState;
             bool foundCurrentStateInDestinationBranch = false;
             while (stateInDestinationBranch->parent != nullptr) {
@@ -109,7 +117,7 @@ protected:
                 // No exit of current state because there is no current state!
                 stateInDestinationBranch->entry();
                 currentState = stateInDestinationBranch;
-                break;
+                continue;
             }
 
             if (currentState->parent == nullptr) {
@@ -118,7 +126,7 @@ protected:
                 currentState->exit();
                 stateInDestinationBranch->entry();
                 currentState = stateInDestinationBranch;
-                break;
+                continue;
             }
 
             // If we get here, we need to transition to the parent of the current state.
@@ -128,8 +136,8 @@ protected:
             // currentState->parent->entry();
             currentState = currentState->parent;
         }
-
-    }
+        std::cout << "transitionTo() finished. Transitioned to state: " << currentState->name << std::endl;
+    } // transitionTo()
 }; // class StateMachine
 
 }; // namespace NinjaHsm

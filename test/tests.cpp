@@ -8,6 +8,7 @@ enum class EventId {
     GO_TO_STATE_1,
     GO_TO_STATE_1A,
     GO_TO_STATE_2,
+    NO_ONE_HANDLES_THIS,
 };
 
 class TestEvent {
@@ -195,4 +196,27 @@ TEST(HsmTests, TransitionToSameStateCallsExitEntryAgain) {
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
     EXPECT_EQ(hsm.state1ExitCallCount, 1); 
     EXPECT_EQ(hsm.state1EntryCallCount, 2);
+}
+
+TEST(HsmTests, EventsBubbleUpToParentStates) {
+    // Create test HSM
+    TestHsm hsm;
+
+    // Transition to state
+    hsm.initialTransitionTo(&hsm.state1A);
+
+    // Make sure we are in state1A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1A);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+    EXPECT_EQ(hsm.state1aEntryCallCount, 1);
+
+    // Send event that no state handles
+    {
+        TestEvent event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure that the event was bubbled up to the parent state
+    EXPECT_EQ(hsm.state1aEventCallCount, 1); 
+    EXPECT_EQ(hsm.state1EventCallCount, 1);
 }
