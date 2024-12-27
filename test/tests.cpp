@@ -9,6 +9,7 @@ enum class EventId {
     GO_TO_STATE_1A,
     GO_TO_STATE_2,
     NO_ONE_HANDLES_THIS,
+    EVERYONE_HANDLES_THIS,
 };
 
 class TestEvent {
@@ -104,6 +105,9 @@ private:
 
         if (event->id == EventId::GO_TO_STATE_2) {
             transitionTo(&state2);
+        }
+        else if (event->id == EventId::EVERYONE_HANDLES_THIS) {
+            eventHandled();
         }
         state1aEventCallCount++;
     }
@@ -219,4 +223,25 @@ TEST(HsmTests, EventsBubbleUpToParentStates) {
     // Make sure that the event was bubbled up to the parent state
     EXPECT_EQ(hsm.state1aEventCallCount, 1); 
     EXPECT_EQ(hsm.state1EventCallCount, 1);
+}
+
+TEST(HsmTests, EventHandledStopsBubbleUp) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1A);
+
+    // Make sure we are in state1A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1A);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+    EXPECT_EQ(hsm.state1aEntryCallCount, 1);
+
+    // Send event that we be handled
+    {
+        TestEvent event(EventId::EVERYONE_HANDLES_THIS);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure that the event was NOT bubbled up to the parent state
+    EXPECT_EQ(hsm.state1aEventCallCount, 1); 
+    EXPECT_EQ(hsm.state1EventCallCount, 0);
 }
