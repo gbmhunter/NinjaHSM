@@ -9,4 +9,4 @@ make
 
 # Run tests
 # ./test/hello_test --gtest_filter="HsmTests.EventsBubbleUpToParentStates"
-./test/hello_test
+./test/standard/hello_test
