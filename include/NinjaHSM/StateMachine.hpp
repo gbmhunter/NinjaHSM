@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <iostream>
+
 #include "State.hpp"
 
 namespace NinjaHSM {
