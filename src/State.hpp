@@ -2,7 +2,7 @@
 
 #include <functional>
 
-namespace NinjaHsm {
+namespace NinjaHSM {
 
 template <typename Event>
 class State {
@@ -27,4 +27,4 @@ public:
     State * parent = nullptr;
 }; // class State
 
-} // namespace NinjaHsm
+} // namespace NinjaHSM

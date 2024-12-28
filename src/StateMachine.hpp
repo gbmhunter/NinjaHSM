@@ -2,7 +2,7 @@
 
 #include "State.hpp"
 
-namespace NinjaHsm {
+namespace NinjaHSM {
 
 template <typename Event>
 class StateMachine {
@@ -140,4 +140,4 @@ protected:
     } // transitionTo()
 }; // class StateMachine
 
-}; // namespace NinjaHsm
+}; // namespace NinjaHSM

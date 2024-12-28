@@ -4,6 +4,8 @@
 
 #include "NinjaHSM.hpp"
 
+using namespace NinjaHSM;
+
 enum class EventId {
     GO_TO_STATE_1,
     GO_TO_STATE_1A,
@@ -18,7 +20,7 @@ public:
   EventId id;
 };
 
-class TestHsm : public NinjaHsm::StateMachine<TestEvent> {
+class TestHsm : public StateMachine<TestEvent> {
 public:
     TestHsm() : 
       state1(
@@ -47,9 +49,9 @@ public:
         addState(&state2);
     }
 
-    NinjaHsm::State<TestEvent> state1;
-    NinjaHsm::State<TestEvent> state1A;
-    NinjaHsm::State<TestEvent> state2;
+    State<TestEvent> state1;
+    State<TestEvent> state1A;
+    State<TestEvent> state2;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;

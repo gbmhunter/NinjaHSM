@@ -1,5 +1,7 @@
 #include "NinjaHSM.hpp"
 
+using namespace NinjaHSM;
+
 class TestHsm : public NinjaHSM::StateMachine {
 
 };
