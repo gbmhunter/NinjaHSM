@@ -18,7 +18,6 @@ FetchContent_MakeAvailable(googletest)
 
 include_directories(src)
 add_library(NinjaHsm INTERFACE)
-target_include_directories(NinjaHsm INTERFACE src)
-# add_executable(NinjaHsm src/NinjaHsm.hpp)
+target_include_directories(NinjaHsm INTERFACE include)
 
 add_subdirectory(test/standard)

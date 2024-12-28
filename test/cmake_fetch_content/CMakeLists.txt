@@ -5,7 +5,7 @@ project(cmake_fetch_content)
 include(FetchContent)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG 53555c16131056088094bda1d8c5ad54205aa500
+    GIT_TAG e895dabdfa5cdbb9d1183abdf7e6bfa0db2cf098
 )
 FetchContent_MakeAvailable(NinjaHSM)
 

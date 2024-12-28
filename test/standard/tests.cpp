@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 
-#include "NinjaHSM.hpp"
+#include "NinjaHSM/NinjaHSM.hpp"
 
 using namespace NinjaHSM;
 
@@ -24,11 +24,11 @@ class TestHsm : public StateMachine<TestEvent> {
 public:
     TestHsm() : 
       state1(
-            "State1",
-            std::bind(&TestHsm::state1_entry, this),
-            std::bind(&TestHsm::state1_event, this, std::placeholders::_1),
-            std::bind(&TestHsm::state1_exit, this),
-            nullptr
+        "State1",
+        std::bind(&TestHsm::state1_entry, this),
+        std::bind(&TestHsm::state1_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state1_exit, this),
+        nullptr
       ),
       state1A(
         "State1A",

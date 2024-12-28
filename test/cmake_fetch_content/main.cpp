@@ -2,7 +2,11 @@
 
 using namespace NinjaHSM;
 
-class TestHsm : public NinjaHSM::StateMachine {
+class Event {
+
+};
+
+class TestHsm : public NinjaHSM::StateMachine<Event> {
 
 };
 
