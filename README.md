@@ -21,13 +21,22 @@ NinjaHSM is a simple hierarchical state machine library written in C++ which has
 
 ## Installation
 
-If you are using CMake, you can add NinjaHSM to your project by adding the following to your `CMakeLists.txt` file:
+If you are using CMake, you can add NinjaHSM to your project by using `FetchContent` in your `CMakeLists.txt` file like so:
 
 ```cmake
 include(FetchContent)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v0.1.0
+    GIT_TAG v0.1.0 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
+
+# Then later once you've defined your target
+target_link_libraries(your_app NinjaHsm)
+```
+
+Then all you need to do is include the NinjaHSM header in your source files:
+
+```cpp
+#include "NinjaHSM/NinjaHSM.hpp"
 ```
