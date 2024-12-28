@@ -10,6 +10,7 @@ enum class EventId {
     GO_TO_STATE_1,
     GO_TO_STATE_1A,
     GO_TO_STATE_2,
+    GO_TO_STATE_3,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
 };
@@ -43,16 +44,24 @@ public:
         std::bind(&TestHsm::state2_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state2_exit, this),
         nullptr
+      ),
+      state3(
+        "State3",
+        std::bind(&TestHsm::state3_entry, this),
+        std::bind(&TestHsm::state3_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state3_exit, this),
+        nullptr
       ) {
         addState(&state1);
         addState(&state1A);
         addState(&state2);
+        addState(&state3);
     }
 
     State<TestEvent> state1;
     State<TestEvent> state1A;
     State<TestEvent> state2;
-
+    State<TestEvent> state3;
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
     uint32_t state1ExitCallCount = 0;
@@ -64,6 +73,10 @@ public:
     uint32_t state2EntryCallCount = 0;
     uint32_t state2EventCallCount = 0;
     uint32_t state2ExitCallCount = 0;
+
+    uint32_t state3EntryCallCount = 0;
+    uint32_t state3EventCallCount = 0;
+    uint32_t state3ExitCallCount = 0;
 
 private:
 
@@ -84,6 +97,9 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_1A) {
             transitionTo(&state1A);
+        }
+        else if (event->id == EventId::GO_TO_STATE_3) {
+            transitionTo(&state3);
         }
         state1EventCallCount++;
     }
@@ -137,14 +153,27 @@ private:
         std::cout << "state2_exit" << std::endl;
         state2ExitCallCount++;
     }
-};
 
-// class MockTestHsm : public TestHsm {
-// public:
-//     MOCK_METHOD0(state1_entry, void());
-//     MOCK_METHOD0(state1_event, void());
-//     MOCK_METHOD0(state1_exit, void());
-// };
+    //========================================================================//
+    // state3
+    //========================================================================//
+
+    virtual void state3_entry() {
+        std::cout << "state3_entry" << std::endl;
+        // We have a state guard here that always transitions to state1
+        transitionTo(&state1);
+    }
+
+    virtual void state3_event(const TestEvent * event) {
+        std::cout << "state3_event" << std::endl;
+        state3EventCallCount++;
+    }
+
+    virtual void state3_exit() {
+        std::cout << "state3_exit" << std::endl;
+        state3ExitCallCount++;
+    }
+};
 
 // Demonstrate some basic assertions.
 TEST(HsmTests, ChildStateTransitionsWork) {
@@ -240,6 +269,27 @@ TEST(HsmTests, EventHandledStopsBubbleUp) {
     // Send event that we be handled
     {
         TestEvent event(EventId::EVERYONE_HANDLES_THIS);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure that the event was NOT bubbled up to the parent state
+    EXPECT_EQ(hsm.state1aEventCallCount, 1); 
+    EXPECT_EQ(hsm.state1EventCallCount, 0);
+}
+
+TEST(HsmTests, TransitionToStopsBubbleUp) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1A);
+
+    // Make sure we are in state1A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1A);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+    EXPECT_EQ(hsm.state1aEntryCallCount, 1);
+
+    // Transition to state2
+    {
+        TestEvent event(EventId::GO_TO_STATE_2);
         hsm.handleEvent(&event);
     }
 
