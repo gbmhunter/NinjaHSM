@@ -1,4 +1,4 @@
-#include "NinjaHSM/NinjaHSM.hpp"
+#include "NinjaHSM.hpp"
 
 class TestHsm : public NinjaHSM::StateMachine {
 

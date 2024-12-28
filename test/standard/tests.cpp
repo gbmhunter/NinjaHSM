@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 
-#include "NinjaHsm.hpp"
+#include "NinjaHSM.hpp"
 
 enum class EventId {
     GO_TO_STATE_1,
