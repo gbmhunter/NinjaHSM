@@ -6,7 +6,7 @@ add_executable(
 )
 target_link_libraries(
   hello_test
-  NinjaHsm
+  NinjaHSM
   GTest::gtest_main
   gmock_main
 )

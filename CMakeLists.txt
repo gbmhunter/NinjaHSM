@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(NinjaHsm)
+project(NinjaHSM)
 
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -16,8 +16,8 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-include_directories(src)
-add_library(NinjaHsm INTERFACE)
-target_include_directories(NinjaHsm INTERFACE include)
+include_directories(include)
+add_library(NinjaHSM INTERFACE)
+target_include_directories(NinjaHSM INTERFACE include)
 
 add_subdirectory(test/standard)
