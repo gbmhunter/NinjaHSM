@@ -1,4 +1,4 @@
-#include "NinjaHSM.hpp"
+#include "NinjaHSM/NinjaHSM.hpp"
 
 using namespace NinjaHSM;
 
