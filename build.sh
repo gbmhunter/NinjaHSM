@@ -8,7 +8,7 @@ cmake ..
 make
 
 # Run tests
-# ./test/standard/hello_test --gtest_filter="HsmTests.EventsBubbleUpToParentStates"
+# ./test/standard/hello_test --gtest_filter="HsmTests.CanTransitionToChildStateFromParentEntry"
 ./test/standard/hello_test
 exit 0
 

@@ -5,6 +5,8 @@
 
 #include "State.hpp"
 
+constexpr uint32_t MAX_RECURSION_COUNT = 10;
+
 namespace NinjaHSM {
 
 template <typename Event>
@@ -72,6 +74,10 @@ protected:
     void transitionTo(State<Event> * state) {
         transitionToCalled = true;
         maxRecursionCount++;
+        if (maxRecursionCount > MAX_RECURSION_COUNT) {
+            std::cout << "Max recursion count reached. Aborting transition." << std::endl;
+            return;
+        }
         uint32_t ourRecursionCount = maxRecursionCount;
         std::cout << "transitionTo() called. Our recursion count is: " << ourRecursionCount << std::endl;
         if (currentState == nullptr) {
@@ -111,16 +117,16 @@ protected:
             // need to move to the current state's parent
             State<Event>* stateInDestinationBranch = destinationState;
             bool foundCurrentStateInDestinationBranch = false;
-            while (true) {
+            while (stateInDestinationBranch != nullptr) {
                 if (stateInDestinationBranch->parent == currentState) {
                     foundCurrentStateInDestinationBranch = true;
                     break;
                 }
                 stateInDestinationBranch = stateInDestinationBranch->parent;
-                if (stateInDestinationBranch == nullptr) {
-                    std::cout << "State in destination branch is null. This should never happen." << std::endl;
-                    break;
-                }
+                // if (stateInDestinationBranch == nullptr) {
+                //     std::cout << "State in destination branch is null. This should never happen." << std::endl;
+                //     break;
+                // }
             }
 
             if (foundCurrentStateInDestinationBranch) {
