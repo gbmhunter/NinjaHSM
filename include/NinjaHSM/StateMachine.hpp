@@ -111,12 +111,16 @@ protected:
             // need to move to the current state's parent
             State<Event>* stateInDestinationBranch = destinationState;
             bool foundCurrentStateInDestinationBranch = false;
-            while (stateInDestinationBranch->parent != nullptr) {
+            while (true) {
                 if (stateInDestinationBranch->parent == currentState) {
                     foundCurrentStateInDestinationBranch = true;
                     break;
                 }
                 stateInDestinationBranch = stateInDestinationBranch->parent;
+                if (stateInDestinationBranch == nullptr) {
+                    std::cout << "State in destination branch is null. This should never happen." << std::endl;
+                    break;
+                }
             }
 
             if (foundCurrentStateInDestinationBranch) {
@@ -131,7 +135,7 @@ protected:
                 }
                 std::cout << "Setting current state to: " << stateInDestinationBranch->name << std::endl;
                 currentState = stateInDestinationBranch;
-                break;
+                continue;
             }
 
             // If we get here, we didn't find the current state in the destination branch.
