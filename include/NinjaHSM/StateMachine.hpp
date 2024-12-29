@@ -82,6 +82,10 @@ protected:
         // Rename just for readability below
         State<Event>* destinationState = state;
 
+
+        // If the new destination state is a child of the previous entry() function,
+        // we don't want to re-call the entry() function.
+
         if (currentState == destinationState) {
             std::cout << "Current state is the same as the destination state. Exiting and entering again." << std::endl;
             currentState->exit();
@@ -145,11 +149,15 @@ protected:
                 continue;
             }
 
-            // If we get here, we need to transition to the parent of the current state.
-            std::cout << "Current state has no parent. Transitioning to top most parent of destination state." << std::endl;
+            // If we get here, we need to exit the current state.
+            std::cout << "Need to exit current state." << std::endl;
             // Transition to the top most parent of the destination state.
             currentState->exit();
-            currentState = currentState->parent; // This will be nullptr
+            if (ourRecursionCount != maxRecursionCount) {
+                std::cout << "Recursion detected. Aborting transition." << std::endl;
+                break;
+            }
+            currentState = currentState->parent; // This might be nullptr
         }
 
         END:

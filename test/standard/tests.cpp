@@ -12,6 +12,7 @@ enum class EventId {
     GO_TO_STATE_1B,
     GO_TO_STATE_2,
     GO_TO_STATE_3,
+    GO_TO_STATE_4,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
 };
@@ -66,11 +67,27 @@ public:
         std::bind(&TestHsm::state3_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state3_exit, this),
         nullptr
+      ),
+      state4(
+        "State4",
+        std::bind(&TestHsm::state4_entry, this),
+        std::bind(&TestHsm::state4_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state4_exit, this),
+        nullptr
+      ),
+      state4A(
+        "State4A",
+        std::bind(&TestHsm::state4a_entry, this),
+        std::bind(&TestHsm::state4a_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state4a_exit, this),
+        &state4
       ) {
         addState(&state1);
         addState(&state1A);
         addState(&state2);
         addState(&state3);
+        addState(&state4);
+        addState(&state4A);
     }
 
     State<TestEvent> state1;
@@ -79,6 +96,8 @@ public:
     State<TestEvent> state1C;
     State<TestEvent> state2;
     State<TestEvent> state3;
+    State<TestEvent> state4;
+    State<TestEvent> state4A;
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
     uint32_t state1ExitCallCount = 0;
@@ -102,6 +121,14 @@ public:
     uint32_t state3EntryCallCount = 0;
     uint32_t state3EventCallCount = 0;
     uint32_t state3ExitCallCount = 0;
+
+    uint32_t state4EntryCallCount = 0;
+    uint32_t state4EventCallCount = 0;
+    uint32_t state4ExitCallCount = 0;
+
+    uint32_t state4aEntryCallCount = 0;
+    uint32_t state4aEventCallCount = 0;
+    uint32_t state4aExitCallCount = 0;
 
 private:
 
@@ -128,6 +155,9 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_3) {
             transitionTo(&state3);
+        }
+        else if (event->id == EventId::GO_TO_STATE_4) {
+            transitionTo(&state4);
         }
         state1EventCallCount++;
     }
@@ -241,6 +271,46 @@ private:
     virtual void state3_exit() {
         std::cout << "state3_exit" << std::endl;
         state3ExitCallCount++;
+    }
+
+    //========================================================================//
+    // state4
+    //========================================================================//
+
+    virtual void state4_entry() {
+        std::cout << "state4_entry" << std::endl;
+        state4EntryCallCount++;
+        // Go directly to state4A, a child state
+        transitionTo(&state4A);
+    }
+
+    virtual void state4_event(const TestEvent * event) {
+        std::cout << "state4_event" << std::endl;
+        state4EventCallCount++;
+    }
+
+    virtual void state4_exit() {
+        std::cout << "state4_exit" << std::endl;
+        state4ExitCallCount++;
+    }
+
+    //========================================================================//
+    // state4/state4a
+    //========================================================================//
+
+    virtual void state4a_entry() {
+        std::cout << "state4a_entry" << std::endl;
+        state4aEntryCallCount++;
+    }
+
+    virtual void state4a_event(const TestEvent * event) {
+        std::cout << "state4a_event" << std::endl;
+        state4aEventCallCount++;
+    }
+
+    virtual void state4a_exit() {
+        std::cout << "state4a_exit" << std::endl;
+        state4aExitCallCount++;
     }
 };
 
@@ -411,3 +481,26 @@ TEST(HsmTests, EntryGuardsWorkWithChildStates) {
     EXPECT_EQ(hsm.state1bEntryCallCount, 1);
     EXPECT_EQ(hsm.state1cEntryCallCount, 1);
 }
+
+// TEST(HsmTests, CanTransitionToChildStateFromParentEntry) {
+//     TestHsm hsm;
+
+//     hsm.initialTransitionTo(&hsm.state1);
+
+//     // Make sure we are in state1
+//     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+//     EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+//     // Send event to transition to state4, which has an entry guard
+//     // that always transitions to state4A
+//     {
+//         TestEvent event(EventId::GO_TO_STATE_4);
+//         hsm.handleEvent(&event);
+//     }
+
+//     // Make sure we are in state4A
+//     EXPECT_EQ(hsm.getCurrentState(), &hsm.state4A);
+//     EXPECT_EQ(hsm.state4EntryCallCount, 1);
+//     EXPECT_EQ(hsm.state4ExitCallCount, 0);
+//     EXPECT_EQ(hsm.state4aEntryCallCount, 1);
+// }
