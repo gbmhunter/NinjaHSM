@@ -61,14 +61,21 @@ protected:
     bool eventHandledCalled = false;
 
     /**
+     * Keeps track of how many times transitionTo() has been called recursively.
+     */
+    uint32_t maxRecursionIndex = 0;
+
+    /**
      * @brief Trigger a transition to a state.
      * @param state The state to transition to.
      */
     void transitionTo(State<Event> * state) {
-        std::cout << "transitionTo() called." << std::endl;
         transitionToCalled = true;
+        uint32_t ourRecursionIndex = maxRecursionIndex;
+        maxRecursionIndex++;
+        std::cout << "transitionTo() called. Our recursion index is: " << ourRecursionIndex << std::endl;
         if (currentState == nullptr) {
-            std::cout << "Current state is null. Transitioning to initial state." << std::endl;
+            std::cout << "Current state is null." << std::endl;
         }
         std::cout << "Destination state: " << state->name << std::endl;
 
@@ -81,6 +88,7 @@ protected:
             currentState->entry();
         }
 
+        // This loop handles one entry or exit per iteration.
         while (currentState != destinationState) {
             if (currentState == nullptr) {
                 std::cout << "Current state is null." << std::endl;
@@ -118,28 +126,30 @@ protected:
                 std::cout << "Current state is null or has no parent. Transitioning to top most parent of destination state." << std::endl;
                 // Transition to the top most parent of the destination state.
                 // No exit of current state because there is no current state!
+                uint32_t ourRecursionCount = maxRecursionIndex;
                 stateInDestinationBranch->entry();
-                currentState = stateInDestinationBranch;
-                continue;
-            }
-
-            if (currentState->parent == nullptr) {
-                std::cout << "Current state has no parent. Transitioning to top most parent of destination state." << std::endl;
-                // Transition to the top most parent of the destination state.
-                currentState->exit();
-                stateInDestinationBranch->entry();
+                if (maxRecursionIndex != ourRecursionCount) {
+                    std::cout << "Recursion count changed. returning." << std::endl;
+                    break;
+                }
+                std::cout << "Setting current state to: " << stateInDestinationBranch->name << std::endl;
                 currentState = stateInDestinationBranch;
                 continue;
             }
 
             // If we get here, we need to transition to the parent of the current state.
+            std::cout << "Current state has no parent. Transitioning to top most parent of destination state." << std::endl;
+            // Transition to the top most parent of the destination state.
             currentState->exit();
-            // Don't need call entry(), it's a parent of the current state so we are
-            // already in it.
-            // currentState->parent->entry();
-            currentState = currentState->parent;
+            currentState = currentState->parent; // This will be nullptr
         }
-        std::cout << "transitionTo() finished. Transitioned to state: " << currentState->name << std::endl;
+        std::cout << "transitionTo() finished. Our recursion index is: " << ourRecursionIndex << ", current state is: " << currentState->name << std::endl;
+
+        // If we are at the top of the recursion, reset the recursion index so it's
+        // ready for the next non-recursive transitionTo() call.
+        if (ourRecursionIndex == 0) {
+            maxRecursionIndex = 0;
+        }
     } // transitionTo()
 }; // class StateMachine
 

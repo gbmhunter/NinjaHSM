@@ -160,6 +160,7 @@ private:
 
     virtual void state3_entry() {
         std::cout << "state3_entry" << std::endl;
+        state3EntryCallCount++;
         // We have a state guard here that always transitions to state1
         transitionTo(&state1);
     }
@@ -296,4 +297,26 @@ TEST(HsmTests, TransitionToStopsBubbleUp) {
     // Make sure that the event was NOT bubbled up to the parent state
     EXPECT_EQ(hsm.state1aEventCallCount, 1); 
     EXPECT_EQ(hsm.state1EventCallCount, 0);
+}
+
+TEST(HsmTests, EntryGuardsWork) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to state3, which has am entry guard
+    // that always transitions to state1
+    {
+        TestEvent event(EventId::GO_TO_STATE_3);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are back in state1, not state3
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 2);
+    EXPECT_EQ(hsm.state3EntryCallCount, 1);
 }

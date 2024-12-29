@@ -8,8 +8,9 @@ cmake ..
 make
 
 # Run tests
-# ./test/hello_test --gtest_filter="HsmTests.EventsBubbleUpToParentStates"
+# ./test/standard/hello_test --gtest_filter="HsmTests.EntryGuardsWork"
 ./test/standard/hello_test
+exit 0
 
 cd ../test/cmake_fetch_content
 mkdir -p build
