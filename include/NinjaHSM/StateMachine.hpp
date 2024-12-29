@@ -63,7 +63,7 @@ protected:
     /**
      * Keeps track of how many times transitionTo() has been called recursively.
      */
-    uint32_t maxRecursionIndex = 0;
+    uint32_t maxRecursionCount = 0;
 
     /**
      * @brief Trigger a transition to a state.
@@ -71,9 +71,9 @@ protected:
      */
     void transitionTo(State<Event> * state) {
         transitionToCalled = true;
-        uint32_t ourRecursionIndex = maxRecursionIndex;
-        maxRecursionIndex++;
-        std::cout << "transitionTo() called. Our recursion index is: " << ourRecursionIndex << std::endl;
+        maxRecursionCount++;
+        uint32_t ourRecursionCount = maxRecursionCount;
+        std::cout << "transitionTo() called. Our recursion count is: " << ourRecursionCount << std::endl;
         if (currentState == nullptr) {
             std::cout << "Current state is null." << std::endl;
         }
@@ -105,12 +105,6 @@ protected:
             bool foundCurrentStateInDestinationBranch = false;
             while (stateInDestinationBranch->parent != nullptr) {
                 if (stateInDestinationBranch->parent == currentState) {
-                    // We've found the current state in the destination branch.
-                    // Move down one state.
-                    std::cout << "Found current state in destination branch. Moving down one state to: " << stateInDestinationBranch->name << std::endl;
-                    // currentState->exit();
-                    stateInDestinationBranch->entry();
-                    currentState = stateInDestinationBranch;
                     foundCurrentStateInDestinationBranch = true;
                     break;
                 }
@@ -118,6 +112,17 @@ protected:
             }
 
             if (foundCurrentStateInDestinationBranch) {
+                // We've found the current state in the destination branch.
+                // Move down one state.
+                std::cout << "Found current state in destination branch. Moving down one state to: " << stateInDestinationBranch->name << std::endl;
+                // currentState->exit();
+                stateInDestinationBranch->entry();
+                if (ourRecursionCount != maxRecursionCount) {
+                    std::cout << "Recursion detected. Aborting transition." << std::endl;
+                    break;
+                }
+                std::cout << "Setting current state to: " << stateInDestinationBranch->name << std::endl;
+                currentState = stateInDestinationBranch;
                 break;
             }
 
@@ -126,10 +131,9 @@ protected:
                 std::cout << "Current state is null or has no parent. Transitioning to top most parent of destination state." << std::endl;
                 // Transition to the top most parent of the destination state.
                 // No exit of current state because there is no current state!
-                uint32_t ourRecursionCount = maxRecursionIndex;
                 stateInDestinationBranch->entry();
-                if (maxRecursionIndex != ourRecursionCount) {
-                    std::cout << "Recursion count changed. returning." << std::endl;
+                if (ourRecursionCount != maxRecursionCount) {
+                    std::cout << "Recursion detected. Aborting transition." << std::endl;
                     break;
                 }
                 std::cout << "Setting current state to: " << stateInDestinationBranch->name << std::endl;
@@ -143,14 +147,16 @@ protected:
             currentState->exit();
             currentState = currentState->parent; // This will be nullptr
         }
-        std::cout << "transitionTo() finished. Our recursion index is: " << ourRecursionIndex << ", current state is: " << currentState->name << std::endl;
+        std::cout << "transitionTo() finished. Our recursion index is: " << ourRecursionCount << ", current state is: " << currentState->name << std::endl;
 
         // If we are at the top of the recursion, reset the recursion index so it's
         // ready for the next non-recursive transitionTo() call.
-        if (ourRecursionIndex == 0) {
-            maxRecursionIndex = 0;
+        if (ourRecursionCount == 1) {
+            maxRecursionCount = 0;
         }
     } // transitionTo()
+
+    
 }; // class StateMachine
 
 }; // namespace NinjaHSM

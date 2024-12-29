@@ -9,6 +9,7 @@ using namespace NinjaHSM;
 enum class EventId {
     GO_TO_STATE_1,
     GO_TO_STATE_1A,
+    GO_TO_STATE_1B,
     GO_TO_STATE_2,
     GO_TO_STATE_3,
     NO_ONE_HANDLES_THIS,
@@ -38,6 +39,20 @@ public:
         std::bind(&TestHsm::state1a_exit, this),
         &state1
       ),
+      state1B(
+        "State1B",
+        std::bind(&TestHsm::state1b_entry, this),
+        std::bind(&TestHsm::state1b_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state1b_exit, this),
+        &state1
+      ),
+      state1C(
+        "State1C",
+        std::bind(&TestHsm::state1c_entry, this),
+        std::bind(&TestHsm::state1c_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state1c_exit, this),
+        &state1
+      ),
       state2(
         "State2",
         std::bind(&TestHsm::state2_entry, this),
@@ -60,6 +75,8 @@ public:
 
     State<TestEvent> state1;
     State<TestEvent> state1A;
+    State<TestEvent> state1B;
+    State<TestEvent> state1C;
     State<TestEvent> state2;
     State<TestEvent> state3;
     uint32_t state1EntryCallCount = 0;
@@ -69,6 +86,14 @@ public:
     uint32_t state1aEntryCallCount = 0;
     uint32_t state1aEventCallCount = 0;
     uint32_t state1aExitCallCount = 0;
+
+    uint32_t state1bEntryCallCount = 0;
+    uint32_t state1bEventCallCount = 0;
+    uint32_t state1bExitCallCount = 0;
+
+    uint32_t state1cEntryCallCount = 0;
+    uint32_t state1cEventCallCount = 0;
+    uint32_t state1cExitCallCount = 0;
 
     uint32_t state2EntryCallCount = 0;
     uint32_t state2EventCallCount = 0;
@@ -97,6 +122,9 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_1A) {
             transitionTo(&state1A);
+        }
+        else if (event->id == EventId::GO_TO_STATE_1B) {
+            transitionTo(&state1B);
         }
         else if (event->id == EventId::GO_TO_STATE_3) {
             transitionTo(&state3);
@@ -133,6 +161,46 @@ private:
     virtual void state1a_exit() {
         std::cout << "state1a_exit" << std::endl;
         state1aExitCallCount++;
+    }
+
+    //========================================================================//
+    // state1/state1b
+    //========================================================================//
+
+    virtual void state1b_entry() {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1bEntryCallCount++;
+        // Go directly to state1C
+        transitionTo(&state1C);
+    }
+
+    virtual void state1b_event(const TestEvent * event) {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1bEventCallCount++;
+    }
+
+    virtual void state1b_exit() {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1bExitCallCount++;
+    }
+
+    //========================================================================//
+    // state1/state1c
+    //========================================================================//
+
+    virtual void state1c_entry() {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1cEntryCallCount++;
+    }
+
+    virtual void state1c_event(const TestEvent * event) {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1cEventCallCount++;
+    }
+
+    virtual void state1c_exit() {
+        std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        state1cExitCallCount++;
     }
 
     //========================================================================//
@@ -299,7 +367,7 @@ TEST(HsmTests, TransitionToStopsBubbleUp) {
     EXPECT_EQ(hsm.state1EventCallCount, 0);
 }
 
-TEST(HsmTests, EntryGuardsWork) {
+TEST(HsmTests, EntryGuardsWorkWithTopLevelStates) {
     TestHsm hsm;
 
     hsm.initialTransitionTo(&hsm.state1);
@@ -319,4 +387,27 @@ TEST(HsmTests, EntryGuardsWork) {
     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
     EXPECT_EQ(hsm.state1EntryCallCount, 2);
     EXPECT_EQ(hsm.state3EntryCallCount, 1);
+}
+
+TEST(HsmTests, EntryGuardsWorkWithChildStates) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to state1B, which has an entry guard
+    // that always transitions to state1C
+    {
+        TestEvent event(EventId::GO_TO_STATE_1B);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state1C
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1C);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+    EXPECT_EQ(hsm.state1bEntryCallCount, 1);
+    EXPECT_EQ(hsm.state1cEntryCallCount, 1);
 }
