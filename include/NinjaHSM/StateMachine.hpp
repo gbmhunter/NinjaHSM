@@ -85,7 +85,11 @@ protected:
         if (currentState == destinationState) {
             std::cout << "Current state is the same as the destination state. Exiting and entering again." << std::endl;
             currentState->exit();
-            currentState->entry();
+            if (ourRecursionCount != maxRecursionCount) {
+                std::cout << "Recursion detected. Aborting transition." << std::endl;
+                goto END;
+            }
+            currentState = currentState->parent;
         }
 
         // This loop handles one entry or exit per iteration.
@@ -147,6 +151,8 @@ protected:
             currentState->exit();
             currentState = currentState->parent; // This will be nullptr
         }
+
+        END:
         std::cout << "transitionTo() finished. Our recursion index is: " << ourRecursionCount << ", current state is: " << currentState->name << std::endl;
 
         // If we are at the top of the recursion, reset the recursion index so it's
