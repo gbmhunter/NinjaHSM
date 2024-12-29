@@ -62,6 +62,8 @@ protected:
 
     bool eventHandledCalled = false;
 
+    State<Event>* calledEntryState = nullptr;
+
     /**
      * Keeps track of how many times transitionTo() has been called recursively.
      */
@@ -90,7 +92,12 @@ protected:
 
 
         // If the new destination state is a child of the previous entry() function,
-        // we don't want to re-call the entry() function.
+        // we don't want to re-call the entry() function (we assume the state was entered).
+        if (calledEntryState != nullptr && isChildOf(calledEntryState, destinationState)) {
+            std::cout << "Just called entry state is a parent of the destination state.Assuming state was entered." << std::endl;
+            currentState = calledEntryState;
+        }
+
 
         if (currentState == destinationState) {
             std::cout << "Current state is the same as the destination state. Exiting and entering again." << std::endl;
@@ -133,8 +140,9 @@ protected:
                 // We've found the current state in the destination branch.
                 // Move down one state.
                 std::cout << "Found current state in destination branch. Moving down one state to: " << stateInDestinationBranch->name << std::endl;
-                // currentState->exit();
+                calledEntryState = stateInDestinationBranch;
                 stateInDestinationBranch->entry();
+                calledEntryState = nullptr;
                 if (ourRecursionCount != maxRecursionCount) {
                     std::cout << "Recursion detected. Aborting transition." << std::endl;
                     break;
@@ -180,7 +188,16 @@ protected:
         }
     } // transitionTo()
 
-    
+    bool isChildOf(State<Event>* parent, State<Event>* child) {
+        State<Event>* state = child;
+        while (state != nullptr) {
+            if (state == parent) {
+                return true;
+            }
+            state = state->parent;
+        }
+        return false;
+    }
 }; // class StateMachine
 
 }; // namespace NinjaHSM

@@ -482,25 +482,25 @@ TEST(HsmTests, EntryGuardsWorkWithChildStates) {
     EXPECT_EQ(hsm.state1cEntryCallCount, 1);
 }
 
-// TEST(HsmTests, CanTransitionToChildStateFromParentEntry) {
-//     TestHsm hsm;
+TEST(HsmTests, CanTransitionToChildStateFromParentEntry) {
+    TestHsm hsm;
 
-//     hsm.initialTransitionTo(&hsm.state1);
+    hsm.initialTransitionTo(&hsm.state1);
 
-//     // Make sure we are in state1
-//     EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
-//     EXPECT_EQ(hsm.state1EntryCallCount, 1);
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
 
-//     // Send event to transition to state4, which has an entry guard
-//     // that always transitions to state4A
-//     {
-//         TestEvent event(EventId::GO_TO_STATE_4);
-//         hsm.handleEvent(&event);
-//     }
+    // Send event to transition to state4, which has an entry guard
+    // that always transitions to state4A
+    {
+        TestEvent event(EventId::GO_TO_STATE_4);
+        hsm.handleEvent(&event);
+    }
 
-//     // Make sure we are in state4A
-//     EXPECT_EQ(hsm.getCurrentState(), &hsm.state4A);
-//     EXPECT_EQ(hsm.state4EntryCallCount, 1);
-//     EXPECT_EQ(hsm.state4ExitCallCount, 0);
-//     EXPECT_EQ(hsm.state4aEntryCallCount, 1);
-// }
+    // Make sure we are in state4A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state4A);
+    EXPECT_EQ(hsm.state4EntryCallCount, 1);
+    EXPECT_EQ(hsm.state4ExitCallCount, 0);
+    EXPECT_EQ(hsm.state4aEntryCallCount, 1);
+}
