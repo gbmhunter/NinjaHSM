@@ -16,6 +16,7 @@ enum class EventId {
     GO_TO_STATE_5,
     GO_TO_STATE_6,
     GO_TO_STATE_7,
+    GO_TO_STATE_8,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
 };
@@ -126,6 +127,13 @@ public:
         std::bind(&TestHsm::state7_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state7_exit, this),
         nullptr
+      ),
+      state8(
+        "State8",
+        std::bind(&TestHsm::state8_entry, this),
+        std::bind(&TestHsm::state8_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state8_exit, this),
+        nullptr
       ) {
         addState(&state1);
         addState(&state1A);
@@ -139,6 +147,7 @@ public:
         addState(&state6);
         addState(&state6A);
         addState(&state7);
+        addState(&state8);
     }
 
     State<TestEvent> state1;
@@ -169,6 +178,12 @@ public:
      * parent states within exit functions.
      */
     State<TestEvent> state7;
+
+    /**
+     * State 8 is for testing transitionTo() calls to
+     * the entry function to oneself. This should cause a re-entry.
+     */
+    State<TestEvent> state8;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
@@ -226,6 +241,11 @@ public:
     uint32_t state7EventCallCount = 0;
     uint32_t state7ExitCallCount = 0;
 
+    uint32_t state8EntryCallCount = 0;
+    uint32_t state8EventCallCount = 0;
+    uint32_t state8ExitCallCount = 0;
+    uint32_t state8ReEntryCallCount = 0;
+
 private:
 
     //========================================================================//
@@ -263,6 +283,9 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_7) {
             transitionTo(&state7);
+        }
+        else if (event->id == EventId::GO_TO_STATE_8) {
+            transitionTo(&state8);
         }
         state1EventCallCount++;
     }
@@ -543,6 +566,32 @@ private:
         state7ExitCallCount++;
         // Override transition and go to state2 instead
         transitionTo(&state2);
+    }
+
+    //========================================================================//
+    // state8
+    //========================================================================//
+
+    virtual void state8_entry() {
+        std::cout << "state8_entry" << std::endl;
+        state8EntryCallCount++;
+
+        // This should cause a single re-entry of state8
+        // upon entry (i.e. 2x entry and 1x exit calls).
+        if (state8ReEntryCallCount == 0) {
+            state8ReEntryCallCount++;
+            transitionTo(&state8);
+        }
+    }
+
+    virtual void state8_event(const TestEvent * event) {
+        std::cout << "state8_event" << std::endl;
+        state8EventCallCount++;
+    }
+
+    virtual void state8_exit() {
+        std::cout << "state8_exit" << std::endl;
+        state8ExitCallCount++;
     }
 };
 
@@ -838,4 +887,22 @@ TEST(HsmTests, CanTransitionToParentStateFromChildExit) {
     EXPECT_EQ(hsm.state7EventCallCount, 1);
     EXPECT_EQ(hsm.state7ExitCallCount, 1);
     EXPECT_EQ(hsm.state2EntryCallCount, 1);
+}
+
+TEST(HsmTests, CanTransitionToSelfFromEntry) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Send event to transition to state8. This should cause a single
+    // re-entry of state8 upon entry (i.e. 2x entry and 1x exit calls).
+    {
+        TestEvent event(EventId::GO_TO_STATE_8);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state8
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state8);
+    EXPECT_EQ(hsm.state8EntryCallCount, 2);
+    EXPECT_EQ(hsm.state8ExitCallCount, 1);
 }
