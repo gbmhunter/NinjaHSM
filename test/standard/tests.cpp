@@ -14,6 +14,8 @@ enum class EventId {
     GO_TO_STATE_3,
     GO_TO_STATE_4,
     GO_TO_STATE_5,
+    GO_TO_STATE_6,
+    GO_TO_STATE_7,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
 };
@@ -103,6 +105,27 @@ public:
         std::bind(&TestHsm::state5a1_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state5a1_exit, this),
         &state5A
+      ),
+      state6(
+        "State6",
+        std::bind(&TestHsm::state6_entry, this),
+        std::bind(&TestHsm::state6_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state6_exit, this),
+        nullptr
+      ),
+      state6A(
+        "State6A",
+        std::bind(&TestHsm::state6a_entry, this),
+        std::bind(&TestHsm::state6a_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state6a_exit, this),
+        &state6
+      ),
+      state7(
+        "State7",
+        std::bind(&TestHsm::state7_entry, this),
+        std::bind(&TestHsm::state7_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state7_exit, this),
+        nullptr
       ) {
         addState(&state1);
         addState(&state1A);
@@ -113,6 +136,9 @@ public:
         addState(&state5);
         addState(&state5A);
         addState(&state5A1);
+        addState(&state6);
+        addState(&state6A);
+        addState(&state7);
     }
 
     State<TestEvent> state1;
@@ -130,6 +156,19 @@ public:
     State<TestEvent> state5;
     State<TestEvent> state5A;
     State<TestEvent> state5A1;
+
+    /**
+     * State 6 is for testing transitionTo() calls to
+     * child states within exit functions.
+     */
+    State<TestEvent> state6;
+    State<TestEvent> state6A;
+
+    /**
+     * State 7 is for testing transitionTo() calls to
+     * parent states within exit functions.
+     */
+    State<TestEvent> state7;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
@@ -175,6 +214,18 @@ public:
     uint32_t state5a1EventCallCount = 0;
     uint32_t state5a1ExitCallCount = 0;
 
+    uint32_t state6EntryCallCount = 0;
+    uint32_t state6EventCallCount = 0;
+    uint32_t state6ExitCallCount = 0;
+
+    uint32_t state6aEntryCallCount = 0;
+    uint32_t state6aEventCallCount = 0;
+    uint32_t state6aExitCallCount = 0;
+
+    uint32_t state7EntryCallCount = 0;
+    uint32_t state7EventCallCount = 0;
+    uint32_t state7ExitCallCount = 0;
+
 private:
 
     //========================================================================//
@@ -206,6 +257,12 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_5) {
             transitionTo(&state5);
+        }
+        else if (event->id == EventId::GO_TO_STATE_6) {
+            transitionTo(&state6);
+        }
+        else if (event->id == EventId::GO_TO_STATE_7) {
+            transitionTo(&state7);
         }
         state1EventCallCount++;
     }
@@ -419,6 +476,73 @@ private:
     virtual void state5a1_exit() {
         std::cout << "state5a1_exit" << std::endl;
         state5a1ExitCallCount++;
+    }
+
+    //========================================================================//
+    // state6
+    //========================================================================//
+
+    virtual void state6_entry() {
+        std::cout << "state6_entry" << std::endl;
+        state6EntryCallCount++;
+    }
+
+    virtual void state6_event(const TestEvent * event) {
+        std::cout << "state6_event" << std::endl;
+        state6EventCallCount++;
+
+        if (event->id == EventId::GO_TO_STATE_1) {
+            transitionTo(&state1);
+        }
+    }
+
+    virtual void state6_exit() {
+        std::cout << "state6_exit" << std::endl;
+        state6ExitCallCount++;
+        transitionTo(&state6A);
+    }
+
+    //========================================================================//
+    // state6/state6a
+    //========================================================================//
+
+    virtual void state6a_entry() {
+        std::cout << "state6a_entry" << std::endl;
+        state6aEntryCallCount++;
+    }
+
+    virtual void state6a_event(const TestEvent * event) {
+        std::cout << "state6a_event" << std::endl;
+        state6aEventCallCount++;
+    }
+
+    virtual void state6a_exit() {
+        std::cout << "state6a_exit" << std::endl;
+        state6aExitCallCount++;
+    }
+
+    //========================================================================//
+    // state7
+    //========================================================================//
+
+    virtual void state7_entry() {
+        std::cout << "state7_entry" << std::endl;
+        state7EntryCallCount++;
+    }
+
+    virtual void state7_event(const TestEvent * event) {
+        std::cout << "state7_event" << std::endl;
+        state7EventCallCount++;
+        if (event->id == EventId::GO_TO_STATE_1) {
+            transitionTo(&state1);
+        }
+    }
+
+    virtual void state7_exit() {
+        std::cout << "state7_exit" << std::endl;
+        state7ExitCallCount++;
+        // Override transition and go to state2 instead
+        transitionTo(&state2);
     }
 };
 
@@ -645,4 +769,73 @@ TEST(HsmTests, ChainedTransitionToInEntryFunctions) {
     // but not the exit
     EXPECT_EQ(hsm.state5a1EntryCallCount, 1);
     EXPECT_EQ(hsm.state5a1ExitCallCount, 0);
+}
+
+TEST(HsmTests, CanTransitionToChildStateFromParentExit) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to state6
+    {
+        TestEvent event(EventId::GO_TO_STATE_6);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state6
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state6);
+    EXPECT_EQ(hsm.state1ExitCallCount, 1);
+    EXPECT_EQ(hsm.state6EntryCallCount, 1);
+
+    // Now try and exit from state6, which will call transitionTo() to state 6a
+    // in it's exit function
+    {
+        TestEvent event(EventId::GO_TO_STATE_1);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state6A
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state6A);
+    // 6 exit function should have been called, even though
+    // we didn't end up exiting from this state
+    EXPECT_EQ(hsm.state6ExitCallCount, 1);
+    EXPECT_EQ(hsm.state6aEntryCallCount, 1);
+}
+
+TEST(HsmTests, CanTransitionToParentStateFromChildExit) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to state7
+    {
+        TestEvent event(EventId::GO_TO_STATE_7);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state7
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state7);
+    EXPECT_EQ(hsm.state1ExitCallCount, 1);
+    EXPECT_EQ(hsm.state7EntryCallCount, 1);
+
+    // Send event to transition to state1, but state7's exit function
+    // overrides this and transitions to state2 instead
+    {
+        TestEvent event(EventId::GO_TO_STATE_1);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state2
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state2);
+    EXPECT_EQ(hsm.state7EventCallCount, 1);
+    EXPECT_EQ(hsm.state7ExitCallCount, 1);
+    EXPECT_EQ(hsm.state2EntryCallCount, 1);
 }

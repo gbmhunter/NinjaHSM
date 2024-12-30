@@ -5,9 +5,11 @@
 
 #include "State.hpp"
 
-constexpr uint32_t MAX_RECURSION_COUNT = 10;
 
 namespace NinjaHSM {
+
+constexpr uint32_t MAX_RECURSION_COUNT = 10;
+constexpr uint32_t MAX_STATES = 100;
 
 template <typename Event>
 class StateMachine {
@@ -16,10 +18,15 @@ public:
         states.fill(nullptr);
     }
 
-    void addState(State<Event> * state) {
+    NinjaHSMRc addState(State<Event> * state) {
         std::cout << "Adding state at index: " << numStates << std::endl;
+        if (numStates >= states.size()) {
+            std::cout << "State machine has reached the maximum number of states. Cannot add more states." << std::endl;
+            return NinjaHSMRc::MAX_STATES_REACHED;
+        }
         states[numStates] = state;
         numStates++;
+        return NinjaHSMRc::SUCCESS;
     }
 
     void initialTransitionTo(State<Event> * state) {
@@ -52,7 +59,7 @@ public:
 
 protected:
 
-    std::array<State<Event>*, 10> states;
+    std::array<State<Event>*, MAX_STATES> states;
 
     std::size_t numStates = 0;
 
@@ -62,7 +69,19 @@ protected:
 
     bool eventHandledCalled = false;
 
+    /**
+     * Set to a valid state pointer just before calling a states entry() function.
+     * This is used to avoid re-calling the entry() function is the entry function
+     * calls transitionTo() to a CHILD state.
+     */
     State<Event>* calledEntryState = nullptr;
+
+    /**
+     * Set to a valid state pointer just before calling a states exit() function.
+     * This is used to avoid re-calling the exit() function is the exit function
+     * calls transitionTo() to a PARENT state.
+     */
+    State<Event>* calledExitState = nullptr;
 
     /**
      * Keeps track of how many times transitionTo() has been called recursively.
@@ -99,6 +118,11 @@ protected:
             calledEntryState = nullptr; // Clear flag
         }
 
+        if (calledExitState != nullptr && !isChildOf(calledExitState, destinationState)) {
+            std::cout << "Just called exit state is not a child of the destination state. Assuming state was exited." << std::endl;
+            currentState = calledExitState->parent;
+            calledExitState = nullptr; // Clear flag
+        }
 
         if (currentState == destinationState) {
             std::cout << "Current state is the same as the destination state. Exiting and entering again." << std::endl;
@@ -153,25 +177,12 @@ protected:
                 continue;
             }
 
-            // If we get here, we didn't find the current state in the destination branch.
-            if (currentState == nullptr)  {
-                std::cout << "Current state is null or has no parent. Transitioning to top most parent of destination state." << std::endl;
-                // Transition to the top most parent of the destination state.
-                // No exit of current state because there is no current state!
-                stateInDestinationBranch->entry();
-                if (ourRecursionCount != maxRecursionCount) {
-                    std::cout << "Recursion detected. Aborting transition." << std::endl;
-                    break;
-                }
-                std::cout << "Setting current state to: " << stateInDestinationBranch->name << std::endl;
-                currentState = stateInDestinationBranch;
-                continue;
-            }
-
             // If we get here, we need to exit the current state.
             std::cout << "Need to exit current state." << std::endl;
             // Transition to the top most parent of the destination state.
+            calledExitState = currentState;
             currentState->exit();
+            calledExitState = nullptr; // Clear flag
             if (ourRecursionCount != maxRecursionCount) {
                 std::cout << "Recursion detected. Aborting transition." << std::endl;
                 break;
