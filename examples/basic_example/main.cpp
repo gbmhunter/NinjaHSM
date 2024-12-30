@@ -1,4 +1,5 @@
 #include <iostream>
+#include <functional>
 
 #include <NinjaHSM/NinjaHSM.hpp>
 
@@ -26,14 +27,84 @@ public:
     int64_t data;
 };
 
-class EventWrapper {
+class Event {
 public:
-    EventWrapper(EventId id) : id(id) {}
+    Event(EventId id) : id(id) {}
     EventId id;
     union {
         EventWithData1 data1;
         EventWithData2 data2;
     };
+};
+
+class MyStateMachine : public StateMachine<Event> {
+public:
+    MyStateMachine() : StateMachine(),
+    state1(
+        "State1",
+        std::bind(&MyStateMachine::state1_entry, this),
+        std::bind(&MyStateMachine::state1_event, this, std::placeholders::_1),
+        std::bind(&MyStateMachine::state1_exit, this),
+        nullptr
+      ),
+      state1a(
+        "State1a",
+        std::bind(&MyStateMachine::state1a_entry, this),
+        std::bind(&MyStateMachine::state1a_event, this, std::placeholders::_1),
+        std::bind(&MyStateMachine::state1a_exit, this),
+        &state1
+      ),
+      state2(
+        "State2",
+        std::bind(&MyStateMachine::state2_entry, this),
+        std::bind(&MyStateMachine::state2_event, this, std::placeholders::_1),
+        std::bind(&MyStateMachine::state2_exit, this),
+        nullptr
+      ) {
+        // Register states with the state machine
+        addState(&state1);
+        addState(&state1a);
+        addState(&state2);
+    }
+
+private:
+    State<Event> state1;
+    State<Event> state1a;
+    State<Event> state2;
+
+    //============================================================================================//
+    // state1
+    //============================================================================================//
+
+    void state1_entry() {}
+    void state1_event(const Event * event) {
+        if (event->id == EventId::EVENT_WITH_NO_DATA) {
+            transitionTo(&state1a);
+        }
+        else if (event->id == EventId::EVENT_WITH_DATA_1) {
+            // We know which event we got, so we can safely access the union member
+            EventWithData1 const * eventWithData = &event->data1;
+            printf("Got event with data: %d\n", eventWithData->data);
+            eventHandled(); // Prevents event from bubbling up to parent states
+        }
+    }
+    void state1_exit() {}
+
+    //============================================================================================//
+    // state1/state1a
+    //============================================================================================//
+
+    void state1a_entry() {}
+    void state1a_event(const Event * event) {}
+    void state1a_exit() {}
+
+    //============================================================================================//
+    // state2
+    //============================================================================================//
+
+    void state2_entry() {}
+    void state2_event(const Event * event) {}
+    void state2_exit() {}
 };
 
 int main() {
