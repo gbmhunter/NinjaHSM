@@ -19,15 +19,33 @@ enum class EventId {
     GO_TO_STATE_8,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
+    EVENT_WITH_DATA_1,
+    EVENT_WITH_DATA_2,
 };
 
-class TestEvent {
+class EventWithData1 {
 public:
-  TestEvent(EventId id) : id(id) {}
-  EventId id;
+    EventWithData1(uint32_t data) : data(data) {}
+    uint32_t data;
 };
 
-class TestHsm : public StateMachine<TestEvent> {
+class EventWithData2 {
+public:
+    EventWithData2(int64_t data) : data(data) {}
+    int64_t data;
+};
+
+class EventWrapper {
+public:
+  EventWrapper(EventId id) : id(id) {}
+  EventId id;
+  union {
+    EventWithData1 data1;
+    EventWithData2 data2;
+  };
+};
+
+class TestHsm : public StateMachine<EventWrapper> {
 public:
     TestHsm() : 
       state1(
@@ -150,40 +168,40 @@ public:
         addState(&state8);
     }
 
-    State<TestEvent> state1;
-    State<TestEvent> state1A;
-    State<TestEvent> state1B;
-    State<TestEvent> state1C;
-    State<TestEvent> state2;
-    State<TestEvent> state3;
-    State<TestEvent> state4;
-    State<TestEvent> state4A;
+    State<EventWrapper> state1;
+    State<EventWrapper> state1A;
+    State<EventWrapper> state1B;
+    State<EventWrapper> state1C;
+    State<EventWrapper> state2;
+    State<EventWrapper> state3;
+    State<EventWrapper> state4;
+    State<EventWrapper> state4A;
 
     /**
      * State 5 is for testing multiple transitionTo() calls within entry functions.
      */
-    State<TestEvent> state5;
-    State<TestEvent> state5A;
-    State<TestEvent> state5A1;
+    State<EventWrapper> state5;
+    State<EventWrapper> state5A;
+    State<EventWrapper> state5A1;
 
     /**
      * State 6 is for testing transitionTo() calls to
      * child states within exit functions.
      */
-    State<TestEvent> state6;
-    State<TestEvent> state6A;
+    State<EventWrapper> state6;
+    State<EventWrapper> state6A;
 
     /**
      * State 7 is for testing transitionTo() calls to
      * parent states within exit functions.
      */
-    State<TestEvent> state7;
+    State<EventWrapper> state7;
 
     /**
      * State 8 is for testing transitionTo() calls to
      * the entry function to oneself. This should cause a re-entry.
      */
-    State<TestEvent> state8;
+    State<EventWrapper> state8;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
@@ -257,7 +275,7 @@ private:
         state1EntryCallCount++;
     }
 
-    virtual void state1_event(const TestEvent * event) {
+    virtual void state1_event(const EventWrapper * event) {
         std::cout << "state1_event" << std::endl;
 
         if (event->id == EventId::GO_TO_STATE_1) {
@@ -304,7 +322,7 @@ private:
         state1aEntryCallCount++;
     }
 
-    virtual void state1a_event(const TestEvent * event) {
+    virtual void state1a_event(const EventWrapper * event) {
         std::cout << "state1a_event" << std::endl;
 
         if (event->id == EventId::GO_TO_STATE_2) {
@@ -332,7 +350,7 @@ private:
         transitionTo(&state1C);
     }
 
-    virtual void state1b_event(const TestEvent * event) {
+    virtual void state1b_event(const EventWrapper * event) {
         std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
         state1bEventCallCount++;
     }
@@ -351,7 +369,7 @@ private:
         state1cEntryCallCount++;
     }
 
-    virtual void state1c_event(const TestEvent * event) {
+    virtual void state1c_event(const EventWrapper * event) {
         std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
         state1cEventCallCount++;
     }
@@ -370,7 +388,7 @@ private:
         state2EntryCallCount++;
     }
 
-    virtual void state2_event(const TestEvent * event) {
+    virtual void state2_event(const EventWrapper * event) {
         std::cout << "state2_event" << std::endl;
         state2EventCallCount++;
     }
@@ -391,7 +409,7 @@ private:
         transitionTo(&state1);
     }
 
-    virtual void state3_event(const TestEvent * event) {
+    virtual void state3_event(const EventWrapper * event) {
         std::cout << "state3_event" << std::endl;
         state3EventCallCount++;
     }
@@ -412,7 +430,7 @@ private:
         transitionTo(&state4A);
     }
 
-    virtual void state4_event(const TestEvent * event) {
+    virtual void state4_event(const EventWrapper * event) {
         std::cout << "state4_event" << std::endl;
         state4EventCallCount++;
     }
@@ -431,7 +449,7 @@ private:
         state4aEntryCallCount++;
     }
 
-    virtual void state4a_event(const TestEvent * event) {
+    virtual void state4a_event(const EventWrapper * event) {
         std::cout << "state4a_event" << std::endl;
         state4aEventCallCount++;
     }
@@ -451,7 +469,7 @@ private:
         transitionTo(&state5A);
     }
 
-    virtual void state5_event(const TestEvent * event) {
+    virtual void state5_event(const EventWrapper * event) {
         std::cout << "state5_event" << std::endl;
         state5EventCallCount++;
     }
@@ -471,7 +489,7 @@ private:
         transitionTo(&state5A1);
     }
 
-    virtual void state5a_event(const TestEvent * event) {
+    virtual void state5a_event(const EventWrapper * event) {
         std::cout << "state5a_event" << std::endl;
         state5aEventCallCount++;
     }
@@ -491,7 +509,7 @@ private:
         transitionTo(&state1);
     }
 
-    virtual void state5a1_event(const TestEvent * event) {
+    virtual void state5a1_event(const EventWrapper * event) {
         std::cout << "state5a1_event" << std::endl;
         state5a1EventCallCount++;
     }
@@ -510,7 +528,7 @@ private:
         state6EntryCallCount++;
     }
 
-    virtual void state6_event(const TestEvent * event) {
+    virtual void state6_event(const EventWrapper * event) {
         std::cout << "state6_event" << std::endl;
         state6EventCallCount++;
 
@@ -534,7 +552,7 @@ private:
         state6aEntryCallCount++;
     }
 
-    virtual void state6a_event(const TestEvent * event) {
+    virtual void state6a_event(const EventWrapper * event) {
         std::cout << "state6a_event" << std::endl;
         state6aEventCallCount++;
     }
@@ -553,7 +571,7 @@ private:
         state7EntryCallCount++;
     }
 
-    virtual void state7_event(const TestEvent * event) {
+    virtual void state7_event(const EventWrapper * event) {
         std::cout << "state7_event" << std::endl;
         state7EventCallCount++;
         if (event->id == EventId::GO_TO_STATE_1) {
@@ -584,7 +602,7 @@ private:
         }
     }
 
-    virtual void state8_event(const TestEvent * event) {
+    virtual void state8_event(const EventWrapper * event) {
         std::cout << "state8_event" << std::endl;
         state8EventCallCount++;
     }
@@ -609,7 +627,7 @@ TEST(HsmTests, ChildStateTransitionsWork) {
 
     // Send event to transition to state1A
     {
-        TestEvent event(EventId::GO_TO_STATE_1A);
+        EventWrapper event(EventId::GO_TO_STATE_1A);
         hsm.handleEvent(&event);
     }
 
@@ -620,7 +638,7 @@ TEST(HsmTests, ChildStateTransitionsWork) {
 
     // Send event to transition to state2
     {
-        TestEvent event(EventId::GO_TO_STATE_2);
+        EventWrapper event(EventId::GO_TO_STATE_2);
         hsm.handleEvent(&event);
     }
 
@@ -643,7 +661,7 @@ TEST(HsmTests, TransitionToSameStateCallsExitEntryAgain) {
 
     // Send event to transition to same state
     {
-        TestEvent event(EventId::GO_TO_STATE_1);
+        EventWrapper event(EventId::GO_TO_STATE_1);
         hsm.handleEvent(&event);
     }
 
@@ -667,7 +685,7 @@ TEST(HsmTests, EventsBubbleUpToParentStates) {
 
     // Send event that no state handles
     {
-        TestEvent event(EventId::NO_ONE_HANDLES_THIS);
+        EventWrapper event(EventId::NO_ONE_HANDLES_THIS);
         hsm.handleEvent(&event);
     }
 
@@ -688,7 +706,7 @@ TEST(HsmTests, EventHandledStopsBubbleUp) {
 
     // Send event that we be handled
     {
-        TestEvent event(EventId::EVERYONE_HANDLES_THIS);
+        EventWrapper event(EventId::EVERYONE_HANDLES_THIS);
         hsm.handleEvent(&event);
     }
 
@@ -709,7 +727,7 @@ TEST(HsmTests, TransitionToStopsBubbleUp) {
 
     // Transition to state2
     {
-        TestEvent event(EventId::GO_TO_STATE_2);
+        EventWrapper event(EventId::GO_TO_STATE_2);
         hsm.handleEvent(&event);
     }
 
@@ -730,7 +748,7 @@ TEST(HsmTests, EntryGuardsWorkWithTopLevelStates) {
     // Send event to transition to state3, which has am entry guard
     // that always transitions to state1
     {
-        TestEvent event(EventId::GO_TO_STATE_3);
+        EventWrapper event(EventId::GO_TO_STATE_3);
         hsm.handleEvent(&event);
     }
 
@@ -752,7 +770,7 @@ TEST(HsmTests, EntryGuardsWorkWithChildStates) {
     // Send event to transition to state1B, which has an entry guard
     // that always transitions to state1C
     {
-        TestEvent event(EventId::GO_TO_STATE_1B);
+        EventWrapper event(EventId::GO_TO_STATE_1B);
         hsm.handleEvent(&event);
     }
 
@@ -775,7 +793,7 @@ TEST(HsmTests, CanTransitionToChildStateFromParentEntry) {
     // Send event to transition to state4, which has an entry guard
     // that always transitions to state4A
     {
-        TestEvent event(EventId::GO_TO_STATE_4);
+        EventWrapper event(EventId::GO_TO_STATE_4);
         hsm.handleEvent(&event);
     }
 
@@ -800,7 +818,7 @@ TEST(HsmTests, ChainedTransitionToInEntryFunctions) {
     // 2. Transition to state5A1 from 5A's entry function
     // 3. Transition to state1 from 5A1's entry function
     {
-        TestEvent event(EventId::GO_TO_STATE_5);
+        EventWrapper event(EventId::GO_TO_STATE_5);
         hsm.handleEvent(&event);
     }
 
@@ -831,7 +849,7 @@ TEST(HsmTests, CanTransitionToChildStateFromParentExit) {
 
     // Send event to transition to state6
     {
-        TestEvent event(EventId::GO_TO_STATE_6);
+        EventWrapper event(EventId::GO_TO_STATE_6);
         hsm.handleEvent(&event);
     }
 
@@ -843,7 +861,7 @@ TEST(HsmTests, CanTransitionToChildStateFromParentExit) {
     // Now try and exit from state6, which will call transitionTo() to state 6a
     // in it's exit function
     {
-        TestEvent event(EventId::GO_TO_STATE_1);
+        EventWrapper event(EventId::GO_TO_STATE_1);
         hsm.handleEvent(&event);
     }
 
@@ -866,7 +884,7 @@ TEST(HsmTests, CanTransitionToParentStateFromChildExit) {
 
     // Send event to transition to state7
     {
-        TestEvent event(EventId::GO_TO_STATE_7);
+        EventWrapper event(EventId::GO_TO_STATE_7);
         hsm.handleEvent(&event);
     }
 
@@ -878,7 +896,7 @@ TEST(HsmTests, CanTransitionToParentStateFromChildExit) {
     // Send event to transition to state1, but state7's exit function
     // overrides this and transitions to state2 instead
     {
-        TestEvent event(EventId::GO_TO_STATE_1);
+        EventWrapper event(EventId::GO_TO_STATE_1);
         hsm.handleEvent(&event);
     }
 
@@ -897,7 +915,7 @@ TEST(HsmTests, CanTransitionToSelfFromEntry) {
     // Send event to transition to state8. This should cause a single
     // re-entry of state8 upon entry (i.e. 2x entry and 1x exit calls).
     {
-        TestEvent event(EventId::GO_TO_STATE_8);
+        EventWrapper event(EventId::GO_TO_STATE_8);
         hsm.handleEvent(&event);
     }
 
