@@ -13,6 +13,7 @@ enum class EventId {
     GO_TO_STATE_2,
     GO_TO_STATE_3,
     GO_TO_STATE_4,
+    GO_TO_STATE_5,
     NO_ONE_HANDLES_THIS,
     EVERYONE_HANDLES_THIS,
 };
@@ -81,6 +82,27 @@ public:
         std::bind(&TestHsm::state4a_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state4a_exit, this),
         &state4
+      ),
+      state5(
+        "State5",
+        std::bind(&TestHsm::state5_entry, this),
+        std::bind(&TestHsm::state5_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state5_exit, this),
+        nullptr
+      ),
+      state5A(
+        "State5A",
+        std::bind(&TestHsm::state5a_entry, this),
+        std::bind(&TestHsm::state5a_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state5a_exit, this),
+        &state5
+      ),
+      state5A1(
+        "State5A1",
+        std::bind(&TestHsm::state5a1_entry, this),
+        std::bind(&TestHsm::state5a1_event, this, std::placeholders::_1),
+        std::bind(&TestHsm::state5a1_exit, this),
+        &state5A
       ) {
         addState(&state1);
         addState(&state1A);
@@ -88,6 +110,9 @@ public:
         addState(&state3);
         addState(&state4);
         addState(&state4A);
+        addState(&state5);
+        addState(&state5A);
+        addState(&state5A1);
     }
 
     State<TestEvent> state1;
@@ -98,6 +123,14 @@ public:
     State<TestEvent> state3;
     State<TestEvent> state4;
     State<TestEvent> state4A;
+
+    /**
+     * State 5 is for testing multiple transitionTo() calls within entry functions.
+     */
+    State<TestEvent> state5;
+    State<TestEvent> state5A;
+    State<TestEvent> state5A1;
+
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
     uint32_t state1ExitCallCount = 0;
@@ -130,6 +163,18 @@ public:
     uint32_t state4aEventCallCount = 0;
     uint32_t state4aExitCallCount = 0;
 
+    uint32_t state5EntryCallCount = 0;
+    uint32_t state5EventCallCount = 0;
+    uint32_t state5ExitCallCount = 0;
+
+    uint32_t state5aEntryCallCount = 0;
+    uint32_t state5aEventCallCount = 0;
+    uint32_t state5aExitCallCount = 0;
+
+    uint32_t state5a1EntryCallCount = 0;
+    uint32_t state5a1EventCallCount = 0;
+    uint32_t state5a1ExitCallCount = 0;
+
 private:
 
     //========================================================================//
@@ -158,6 +203,9 @@ private:
         }
         else if (event->id == EventId::GO_TO_STATE_4) {
             transitionTo(&state4);
+        }
+        else if (event->id == EventId::GO_TO_STATE_5) {
+            transitionTo(&state5);
         }
         state1EventCallCount++;
     }
@@ -311,6 +359,66 @@ private:
     virtual void state4a_exit() {
         std::cout << "state4a_exit" << std::endl;
         state4aExitCallCount++;
+    }
+
+    //========================================================================//
+    // state5
+    //========================================================================//
+
+    virtual void state5_entry() {
+        std::cout << "state5_entry" << std::endl;
+        state5EntryCallCount++;
+        transitionTo(&state5A);
+    }
+
+    virtual void state5_event(const TestEvent * event) {
+        std::cout << "state5_event" << std::endl;
+        state5EventCallCount++;
+    }
+
+    virtual void state5_exit() {
+        std::cout << "state5_exit" << std::endl;
+        state5ExitCallCount++;
+    }
+
+    //========================================================================//
+    // state5/state5a
+    //========================================================================//
+
+    virtual void state5a_entry() {
+        std::cout << "state5a_entry" << std::endl;
+        state5aEntryCallCount++;
+        transitionTo(&state5A1);
+    }
+
+    virtual void state5a_event(const TestEvent * event) {
+        std::cout << "state5a_event" << std::endl;
+        state5aEventCallCount++;
+    }
+
+    virtual void state5a_exit() {
+        std::cout << "state5a_exit" << std::endl;
+        state5aExitCallCount++;
+    }
+
+    //========================================================================//
+    // state5/state5a/state5a1
+    //========================================================================//
+
+    virtual void state5a1_entry() {
+        std::cout << "state5a1_entry" << std::endl;
+        state5a1EntryCallCount++;
+        transitionTo(&state1);
+    }
+
+    virtual void state5a1_event(const TestEvent * event) {
+        std::cout << "state5a1_event" << std::endl;
+        state5a1EventCallCount++;
+    }
+
+    virtual void state5a1_exit() {
+        std::cout << "state5a1_exit" << std::endl;
+        state5a1ExitCallCount++;
     }
 };
 
@@ -503,4 +611,38 @@ TEST(HsmTests, CanTransitionToChildStateFromParentEntry) {
     EXPECT_EQ(hsm.state4EntryCallCount, 1);
     EXPECT_EQ(hsm.state4ExitCallCount, 0);
     EXPECT_EQ(hsm.state4aEntryCallCount, 1);
+}
+
+TEST(HsmTests, ChainedTransitionToInEntryFunctions) {
+    TestHsm hsm;
+
+    hsm.initialTransitionTo(&hsm.state1);
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 1);
+
+    // Send event to transition to state5, which will:
+    // 1. Transition to state5A from 5's entry function
+    // 2. Transition to state5A1 from 5A's entry function
+    // 3. Transition to state1 from 5A1's entry function
+    {
+        TestEvent event(EventId::GO_TO_STATE_5);
+        hsm.handleEvent(&event);
+    }
+
+    // Make sure we are in state1
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.state1);
+    EXPECT_EQ(hsm.state1EntryCallCount, 2);
+    EXPECT_EQ(hsm.state5EntryCallCount, 1);
+    EXPECT_EQ(hsm.state5ExitCallCount, 1);
+    
+    EXPECT_EQ(hsm.state5aEntryCallCount, 1);
+    EXPECT_EQ(hsm.state5aExitCallCount, 1);
+    
+    // We never entered state5A since we transitioned to state1
+    // in it's entry function. The entry function would have been called,
+    // but not the exit
+    EXPECT_EQ(hsm.state5a1EntryCallCount, 1);
+    EXPECT_EQ(hsm.state5a1ExitCallCount, 0);
 }

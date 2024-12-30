@@ -96,6 +96,7 @@ protected:
         if (calledEntryState != nullptr && isChildOf(calledEntryState, destinationState)) {
             std::cout << "Just called entry state is a parent of the destination state.Assuming state was entered." << std::endl;
             currentState = calledEntryState;
+            calledEntryState = nullptr; // Clear flag
         }
 
 
