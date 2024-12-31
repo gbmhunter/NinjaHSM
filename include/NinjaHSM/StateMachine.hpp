@@ -14,25 +14,24 @@ constexpr uint32_t MAX_STATES = 100;
 template <typename Event>
 class StateMachine {
 public:
-    StateMachine() {
-        states.fill(nullptr);
-    }
+    StateMachine() {}
 
-    NinjaHSMRc addState(State<Event> * state) {
-        std::cout << "Adding state at index: " << numStates << std::endl;
-        if (numStates >= states.size()) {
-            std::cout << "State machine has reached the maximum number of states. Cannot add more states." << std::endl;
-            return NinjaHSMRc::MAX_STATES_REACHED;
-        }
-        states[numStates] = state;
-        numStates++;
-        return NinjaHSMRc::SUCCESS;
-    }
-
+    /**
+     * Perform the transition to the provided initial state. This function should be called before
+     * calling handleEvent() for the first time.
+     * 
+     * @param[in] state The initial state to transition to.
+     */
     void initialTransitionTo(State<Event> * state) {
         transitionTo(state);
     }
 
+    /**
+     * Provide an event to the state machine. The state machine will call then current state's
+     * onEvent() function.
+     * 
+     * @param[in] event The event to handle.
+     */
     void handleEvent(Event * event) {
         // The event handler could call transitionTo() to change the state, and/or
         // call eventHandled() to indicate that the event was handled. If any of these
@@ -49,19 +48,26 @@ public:
         }
     }
 
+    /**
+     * Get the current state of the state machine.
+     * 
+     * @return A pointer to the current state.
+     */
     State<Event>* getCurrentState() {
         return currentState;
     }
 
+    /**
+     * Indicate to the state machine that an event was handled and event bubbling should stop.
+     * This function should be called only inside state onEvent() functions.
+     * 
+     * Calling transitionTo() from within a state's onEvent() function will also stop event bubbling.
+     */
     void eventHandled() {
         eventHandledCalled = true;
     }
 
 protected:
-
-    std::array<State<Event>*, MAX_STATES> states;
-
-    std::size_t numStates = 0;
 
     State<Event>* currentState = nullptr;
 

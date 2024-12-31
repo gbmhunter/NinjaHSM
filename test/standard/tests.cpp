@@ -152,21 +152,7 @@ public:
         std::bind(&TestHsm::state8_event, this, std::placeholders::_1),
         std::bind(&TestHsm::state8_exit, this),
         nullptr
-      ) {
-        addState(&state1);
-        addState(&state1A);
-        addState(&state2);
-        addState(&state3);
-        addState(&state4);
-        addState(&state4A);
-        addState(&state5);
-        addState(&state5A);
-        addState(&state5A1);
-        addState(&state6);
-        addState(&state6A);
-        addState(&state7);
-        addState(&state8);
-    }
+      ) {}
 
     State<Event> state1;
     State<Event> state1A;
