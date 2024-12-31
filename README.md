@@ -162,6 +162,14 @@ private:
 
 The template parameter `<Event>` is just so that rather than passing in the events a `void *`, we have proper typing.
 
+Inheriting from `StateMachine<Event>` gives you the following methods available on your state machine class:
+
+* `initialTransitionTo(State<Event> * state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
+* `handleEvent(Event * event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
+* `transitionTo(State<Event> * state)`: Transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details).
+* `getCurrentState()`: Gets the current state.
+* `eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states.
+
 Now we can create an instance of our state machine and start sending events to it:
 
 ```cpp
@@ -171,12 +179,13 @@ int main() {
     MyStateMachine stateMachine;
     printf("State machine created. state is: %s\n", stateMachine.getCurrentState()->name);
 
-    // Send an event with no data
+    // Send an event with no data, this causes a change in state (see the state1_event() method).
     Event event1(EventId::EVENT_WITH_NO_DATA);
     stateMachine.handleEvent(&event1);
     printf("Event 1 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
 
-    // Send an event with data
+    // Send an event with data, this doesn't change the state, but just shows how you can
+    // react to data passed in with the event.
     Event event2(EventId::EVENT_WITH_DATA_1);
     event2.data1.data = 123;
     stateMachine.handleEvent(&event2);
@@ -188,9 +197,15 @@ int main() {
 
 This prints:
 
-```cpp
-
+```text
+basic_example running...
+State machine created. state is: State1
+Event 1 handled. state is now: State1a
+Got event with data: 123
+Event 2 handled. state is now: State1a
 ```
+
+This example is available in the `examples/basic_example/` directory.
 
 ### Entry and Exit Guards
 
@@ -212,4 +227,4 @@ Hopefully these rules make intuitive sense!
 
 ### Others
 
-See the `test/` directory for more examples on how to use NinjaHSM.
+See the `examples/` and `test/` directories for more examples on how to use NinjaHSM.
