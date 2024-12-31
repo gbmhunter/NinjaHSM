@@ -33,7 +33,7 @@ jobs:
 
     - name: Run tests
       working-directory: ${{github.workspace}}/build
-      run: ./test/standard/hello_test
+      run: ./test/tests
 
     - name: Build examples
       working-directory: ${{github.workspace}}/examples/basic_example

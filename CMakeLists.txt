@@ -20,4 +20,4 @@ include_directories(include)
 add_library(NinjaHSM INTERFACE)
 target_include_directories(NinjaHSM INTERFACE include)
 
-add_subdirectory(test/standard)
+add_subdirectory(test)
