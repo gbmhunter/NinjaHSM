@@ -7,15 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2024-12-31
+
 ### Added
 
 - `transitionTo()` can now be called from within a state's `entry()` or `exit()` methods (i.e. `transitionTo()` recursion).
 - Added more tests around `transitionTo()` recursion.
 - Set the maximum recursion count for `transitionTo()` to 50.
-- Removed debug `std::cout` statements.
 - Added example project under `examples/`.
 - Added more installation and examples to the README.
 - Setup GitHub Actions to build and run tests on Linux.
+
+### Changed
+
+- Removed debug `std::cout` statements.
 
 ## [0.1.0] - 2024-12-28
 
@@ -30,5 +35,6 @@ Initial release.
 - Events stop bubbling up if a child state calls `transitionTo()` or `eventHandled()`.
 - Added a test suite.
 
-[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/gbmhunter/NinjaHSM/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/gbmhunter/NinjaHSM/releases/tag/v0.1.0
