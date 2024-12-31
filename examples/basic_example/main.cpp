@@ -9,6 +9,7 @@ using namespace NinjaHSM;
 // Events
 //==============================================================================
 
+// Used to identify what event we have.
 enum class EventId {
     EVENT_WITH_NO_DATA,
     EVENT_WITH_DATA_1,
@@ -27,6 +28,7 @@ public:
     int64_t data;
 };
 
+// This is the "wrapper" class.
 class Event {
 public:
     Event(EventId id) : id(id) {}
@@ -36,6 +38,10 @@ public:
         EventWithData2 data2;
     };
 };
+
+//==============================================================================
+// State Machine
+//==============================================================================
 
 class MyStateMachine : public StateMachine<Event> {
 public:
@@ -76,6 +82,7 @@ private:
     void state1_entry() {}
     void state1_event(const Event * event) {
         if (event->id == EventId::EVENT_WITH_NO_DATA) {
+            // Let's go to a different state!
             transitionTo(&state1a);
         }
         else if (event->id == EventId::EVENT_WITH_DATA_1) {

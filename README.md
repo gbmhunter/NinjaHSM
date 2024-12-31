@@ -55,9 +55,10 @@ using namespace NinjaHSM;
 
 ### Defining Events
 
-You will need to define an `Event` class. This will be used to pass events to the `onEvent()` method.
+You will need to define an `Event` class. This will be used to pass events to the `onEvent()` method, so your state machine can react to things. I use a `union` below to that each event can have an ID and some associated data.
 
 ```cpp
+// Used to identify what event we have.
 enum class EventId {
     EVENT_WITH_NO_DATA,
     EVENT_WITH_DATA_1,
@@ -76,6 +77,7 @@ public:
     int64_t data;
 };
 
+// This is the "wrapper" class.
 class Event {
 public:
     Event(EventId id) : id(id) {}
@@ -143,6 +145,7 @@ private:
     void state1_entry() {}
     void state1_event(const Event * event) {
         if (event->id == EventId::EVENT_WITH_NO_DATA) {
+            // Let's go to a different state!
             transitionTo(&state1a);
         }
         else if (event->id == EventId::EVENT_WITH_DATA_1) {
@@ -178,7 +181,7 @@ Inheriting from `StateMachine<Event>` gives you the following methods available 
 
 * `initialTransitionTo(State<Event> * state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
 * `handleEvent(Event * event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
-* `transitionTo(State<Event> * state)`: Transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details).
+* `transitionTo(State<Event> * state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
 * `getCurrentState()`: Gets the current state.
 * `eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states.
 
@@ -227,15 +230,15 @@ Because `entry()` and `exit()` states are only every called by `transitionTo()` 
 
 **entry() Rules:**
 
-* If state A calls `transitionTo(stateB)` from within it's `entry()` method, AND `stateB` IS NOT a child of `stateA`, then NinjaHSM asummes `stateA` was not entered, and does not call `stateA`'s `exit()` method.
-* If state A calls `transitionTo(stateB)` from within it's `entry()` method, AND `stateB` IS a child of `stateA`, then NinjaHSM asummes `stateA` was entered succesfully, and does not call `stateA`'s `exit()` method or recall `stateA`'s `entry()` method.
+* If `stateA` calls `transitionTo(stateB)` from within it's `entry()` method, AND `stateB` IS NOT a child of `stateA`, then NinjaHSM asummes `stateA` was not entered, and does not call `stateA`'s `exit()` method.
+* If `stateA` calls `transitionTo(stateB)` from within it's `entry()` method, AND `stateB` IS a child of `stateA`, then NinjaHSM asummes `stateA` was entered succesfully, and does not call `stateA`'s `exit()` method or recall `stateA`'s `entry()` method.
 
 **exit() Rules:**
 
-* If state A calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS NOT a child of `stateA`, then NinjaHSM asummes `stateA` was exited succesfully, and does not call `stateA`'s `exit()` method again.
-* If state A calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS a child of `stateA`, then NinjaHSM asummes `stateA` was not exited, and does not call `stateA`'s `entry()` method again.
+* If `stateA` calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS NOT a child of `stateA`, then NinjaHSM asummes `stateA` was exited succesfully, and does not call `stateA`'s `exit()` method again.
+* If `stateA` calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS a child of `stateA`, then NinjaHSM asummes `stateA` was not exited, and does not call `stateA`'s `entry()` method again.
 
-Hopefully these rules make intuitive sense!
+Hopefully these rules make intuitive sense! There is also a max. recursion depth of 50 (set by `MAX_RECURSION_DEPTH` in `NinjaHSM.hpp`) to prevent infinite recursion in the case of bugs (e.g. if you unconditionally call `transitionTo(stateB)` in `stateA`'s `entry()` method, and unconditionally call `transitionTo(stateA)` in `stateB`'s `entry()` method).
 
 ### Others
 
