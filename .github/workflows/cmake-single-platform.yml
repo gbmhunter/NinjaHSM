@@ -36,11 +36,11 @@ jobs:
       run: ./test/standard/hello_test
 
     - name: Build examples
-      working-directory: ${{github.workspace}}/examples/basic_example/build
+      working-directory: ${{github.workspace}}/examples/basic_example
       run: mkdir -p build && cd build && cmake --build . --config ${{env.BUILD_TYPE}}
 
     - name: Run examples
-      working-directory: ${{github.workspace}}/examples/basic_example/build
-      run: ./basic_example
+      working-directory: ${{github.workspace}}/examples/basic_example
+      run: ./build/basic_example
 
 
