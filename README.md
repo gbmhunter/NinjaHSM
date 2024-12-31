@@ -41,6 +41,8 @@ Then all you need to do is include the NinjaHSM header in your source files and 
 #include "NinjaHSM/NinjaHSM.hpp"
 ```
 
+If you want to see `FetchContent` in action, see the `examples/basic_example/` CMake project.
+
 ## Usage
 
 Firstly, include the NinjaHSM header in your source files. It's also a good idea to use the `using namespace NinjaHSM;` directive to make the code less verbose.
@@ -89,7 +91,17 @@ public:
 
 Now we have our events defined, we can create a state machine. You need to make your own state machine class which inherits from `NinjaHSM::StateMachine<Event>`. This of your class AS A state machine, but the `NinjaHSM::StateMachine` class provides a lot of the boilerplate code for you, including the transition logic.
 
-In your class, you will need to create a `State<Event>` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent).
+In your class, you will need to create a `NinjaHSM::State<Event>` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent). Use the pointer to the parent state to create a hierarchical state machine (HSM).
+
+The following example creates a basic hierarchical state machine with three states, one of which is a child state. The hierarchy looks like this:
+
+```text
+State1
+   |-- State1a
+State2
+```
+
+Here is the C++ code:
 
 ```cpp
 class MyStateMachine : public StateMachine<Event> {
@@ -160,7 +172,7 @@ private:
 };
 ```
 
-The template parameter `<Event>` is just so that rather than passing in the events a `void *`, we have proper typing.
+The template parameter `<Event>` is just so that rather than passing in the events a `void *`, we have proper typing. Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event).
 
 Inheriting from `StateMachine<Event>` gives you the following methods available on your state machine class:
 
