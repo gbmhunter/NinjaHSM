@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed debug `std::cout` statements.
 - Added example project under `examples/`.
 - Added more installation and examples to the README.
+- Setup GitHub Actions to build and run tests on Linux.
 
 ## [0.1.0] - 2024-12-28
 

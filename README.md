@@ -226,6 +226,17 @@ This example is available in the `examples/basic_example/` directory.
 
 NinjaHSM supports the ability to call `transitionTo()` from within a state's `entry()` or `exit()` methods. One use case for this is to add entry guards to states, protecting them from being entered if certain conditions are not met. When a state can be transitions to from many other states, it is less code repetition to add the guard to the entry function of the destination state rather than in every source state. An example would be a rocket's LAUNCH state. You could add guards to LAUNCH's `entry()` method to ensure the rocket has no issues before it can be launched, and if it does, transition to an ERROR state instead.
 
+```cpp
+void stateRunning_entry() {
+    // Example of an entry guard.
+    if (notReady) {
+        transitionTo(&stateIdle);
+        return;
+    }
+    // Do normal entry logic here.
+}
+```
+
 Because `entry()` and `exit()` states are only every called by `transitionTo()` in the first place, calling `transitionTo()` from within `entry()` or `exit()` is recursive. NinjaHSM supports this, with the following rules:
 
 **entry() Rules:**
