@@ -61,10 +61,7 @@ public:
         std::bind(&MyStateMachine::state2_exit, this),
         nullptr
       ) {
-        // Register states with the state machine
-        addState(&state1);
-        addState(&state1a);
-        addState(&state2);
+        transitionTo(&state1);
     }
 
 private:
@@ -108,6 +105,21 @@ private:
 };
 
 int main() {
-    std::cout << "basic_example running..." << std::endl;
+    printf("basic_example running...\n");
+    // Create the state machine
+    MyStateMachine stateMachine;
+    printf("State machine created. state is: %s\n", stateMachine.getCurrentState()->name);
+
+    // Send an event with no data
+    Event event1(EventId::EVENT_WITH_NO_DATA);
+    stateMachine.handleEvent(&event1);
+    printf("Event 1 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
+
+    // Send an event with data
+    Event event2(EventId::EVENT_WITH_DATA_1);
+    event2.data1.data = 123;
+    stateMachine.handleEvent(&event2);
+    printf("Event 2 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
+    
     return 0;
 }

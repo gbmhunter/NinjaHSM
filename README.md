@@ -107,7 +107,7 @@ public:
         std::bind(&MyStateMachine::state1a_entry, this),
         std::bind(&MyStateMachine::state1a_event, this, std::placeholders::_1),
         std::bind(&MyStateMachine::state1a_exit, this),
-        &state1 // This makes state1a a child of state1.
+        &state1
       ),
       state2(
         "State2",
@@ -116,10 +116,7 @@ public:
         std::bind(&MyStateMachine::state2_exit, this),
         nullptr
       ) {
-        // Register states with the state machine
-        addState(&state1);
-        addState(&state1a);
-        addState(&state2);
+        transitionTo(&state1);
     }
 
 private:
@@ -164,6 +161,36 @@ private:
 ```
 
 The template parameter `<Event>` is just so that rather than passing in the events a `void *`, we have proper typing.
+
+Now we can create an instance of our state machine and start sending events to it:
+
+```cpp
+int main() {
+    printf("basic_example running...\n");
+    // Create the state machine
+    MyStateMachine stateMachine;
+    printf("State machine created. state is: %s\n", stateMachine.getCurrentState()->name);
+
+    // Send an event with no data
+    Event event1(EventId::EVENT_WITH_NO_DATA);
+    stateMachine.handleEvent(&event1);
+    printf("Event 1 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
+
+    // Send an event with data
+    Event event2(EventId::EVENT_WITH_DATA_1);
+    event2.data1.data = 123;
+    stateMachine.handleEvent(&event2);
+    printf("Event 2 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
+    
+    return 0;
+}
+```
+
+This prints:
+
+```cpp
+
+```
 
 ### Entry and Exit Guards
 

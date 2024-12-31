@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `transitionTo()` can now be called from within a state's `entry()` or `exit()` methods (i.e. `transitionTo()` recursion).
+- Added more tests around `transitionTo()` recursion.
+- Set the maximum recursion count for `transitionTo()` to 50.
+- Removed debug `std::cout` statements.
+- Added example project under `examples/`.
+- Added more installation and examples to the README.
+
 ## [0.1.0] - 2024-12-28
 
 Initial release.
