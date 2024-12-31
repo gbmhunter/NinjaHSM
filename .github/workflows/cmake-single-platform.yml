@@ -37,7 +37,7 @@ jobs:
 
     - name: Build examples
       working-directory: ${{github.workspace}}/examples/basic_example/build
-      run: cmake --build ${{github.workspace}}/examples/basic_example/build --config ${{env.BUILD_TYPE}}
+      run: mkdir -p build && cd build && cmake --build . --config ${{env.BUILD_TYPE}}
 
     - name: Run examples
       working-directory: ${{github.workspace}}/examples/basic_example/build
