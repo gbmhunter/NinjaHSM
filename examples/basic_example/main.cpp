@@ -120,14 +120,14 @@ int main() {
 
     // Send an event with no data, this causes a change in state (see the state1_event() method).
     Event event1(EventId::EVENT_WITH_NO_DATA);
-    stateMachine.handleEvent(&event1);
+    stateMachine.handleEvent(static_cast<void*>(&event1));
     printf("Event 1 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
 
     // Send an event with data, this doesn't change the state, but just shows how you can
     // react to data passed in with the event.
     Event event2(EventId::EVENT_WITH_DATA_1);
     event2.data1.data = 123;
-    stateMachine.handleEvent(&event2);
+    stateMachine.handleEvent(static_cast<void*>(&event2));
     printf("Event 2 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
     
     return 0;
