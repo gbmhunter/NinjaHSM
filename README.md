@@ -27,7 +27,7 @@ If you are using CMake, you can add NinjaHSM to your project by using `FetchCont
 include(FetchContent)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v0.1.0 # This can be a hash, tag or branch.
+    GIT_TAG v1.0.1 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
 
@@ -254,3 +254,26 @@ Hopefully these rules make intuitive sense! There is also a max. recursion depth
 ### Others
 
 See the `examples/` and `test/` directories for more examples on how to use NinjaHSM.
+
+## Building the Test Suite
+
+This project defines a CMake option `NINJAHSM_BUILD_TESTS` (which defaults to off) to allow the user to control whether the test suite is built. This defaults to off because if embedded projects use this as a library, they will likely encounter build errors if they try and pull in GoogleTest and/or build the test application.
+
+To build the test suite, you can use the following CMake command:
+
+```bash
+cmake -DNINJAHSM_BUILD_TESTS=ON ..
+```
+
+Alternatively, if you are including NinjaHSM using `FetchContent`, you can set the option in your `CMakeLists.txt` file like so:
+
+```cmake
+include(FetchContent)
+set(NINJAHSM_BUILD_TESTS ON CACHE BOOL "" FORCE)
+FetchContent_Declare(NinjaHSM
+    GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
+    GIT_TAG v1.0.1 # This can be a hash, tag or branch.
+)
+FetchContent_MakeAvailable(NinjaHSM)
+target_link_libraries(your_app NinjaHsm)
+```

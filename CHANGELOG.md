@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issue where it was tricky to include this as a library in an embedded project due to this project pulling in GoogleTest for the test suite. Added a `NINJAHSM_BUILD_TESTS` option (which defaults to off) to allow the user to control whether the test suite is built.
+
 ## [1.0.0] - 2024-12-31
 
 ### Added
