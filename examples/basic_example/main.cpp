@@ -43,7 +43,7 @@ public:
 // State Machine
 //==============================================================================
 
-class MyStateMachine : public StateMachine<Event> {
+class MyStateMachine : public StateMachine {
 public:
     MyStateMachine() : StateMachine(),
     state1(
@@ -71,16 +71,17 @@ public:
     }
 
 private:
-    State<Event> state1;
-    State<Event> state1a;
-    State<Event> state2;
+    State state1;
+    State state1a;
+    State state2;
 
     //============================================================================================//
     // state1
     //============================================================================================//
 
     void state1_entry() {}
-    void state1_event(const Event * event) {
+    void state1_event(const void * eventRaw) {
+        const Event * event = static_cast<const Event *>(eventRaw);
         if (event->id == EventId::EVENT_WITH_NO_DATA) {
             // Let's go to a different state!
             transitionTo(&state1a);
@@ -99,7 +100,7 @@ private:
     //============================================================================================//
 
     void state1a_entry() {}
-    void state1a_event(const Event * event) {}
+    void state1a_event(const void * eventRaw) {}
     void state1a_exit() {}
 
     //============================================================================================//
@@ -107,7 +108,7 @@ private:
     //============================================================================================//
 
     void state2_entry() {}
-    void state2_event(const Event * event) {}
+    void state2_event(const void * eventRaw) {}
     void state2_exit() {}
 };
 

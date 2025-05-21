@@ -4,13 +4,12 @@
 
 namespace NinjaHSM {
 
-template <typename Event>
 class State {
 public:
     State(
         const char * name,
         std::function<void()> entry,
-        std::function<void(const Event *)> event,
+        std::function<void(const void *)> event,
         std::function<void()> exit,
         State * parent) :
             name(name),
@@ -21,7 +20,7 @@ public:
 
     const char * name;
     std::function<void()> entry;
-    std::function<void(const Event *)> event;
+    std::function<void(const void *)> event;
     std::function<void()> exit;
 
     State * parent = nullptr;

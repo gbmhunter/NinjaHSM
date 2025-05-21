@@ -14,7 +14,6 @@ namespace NinjaHSM {
  */
 constexpr uint32_t MAX_RECURSION_COUNT = 50;
 
-template <typename Event>
 class StateMachine {
 public:
     StateMachine() {}
@@ -25,7 +24,7 @@ public:
      * 
      * @param[in] state The initial state to transition to.
      */
-    void initialTransitionTo(State<Event> * state) {
+    void initialTransitionTo(State * state) {
         transitionTo(state);
     }
 
@@ -41,7 +40,7 @@ public:
         // occur, we do not want to propagate the event to the parent state.
         transitionToCalled = false;
         eventHandledCalled = false;
-        State<Event>* stateToHandleEvent = currentState;
+        State* stateToHandleEvent = currentState;
         while (stateToHandleEvent != nullptr) {
             stateToHandleEvent->event(event);
             if (transitionToCalled || eventHandledCalled) {
@@ -56,7 +55,7 @@ public:
      * 
      * @return A pointer to the current state.
      */
-    State<Event>* getCurrentState() {
+    State* getCurrentState() {
         return currentState;
     }
 
@@ -72,7 +71,7 @@ public:
 
 protected:
 
-    State<Event>* currentState = nullptr;
+    State* currentState = nullptr;
 
     bool transitionToCalled = false;
 
@@ -83,14 +82,14 @@ protected:
      * This is used to avoid re-calling the entry() function is the entry function
      * calls transitionTo() to a CHILD state.
      */
-    State<Event>* calledEntryState = nullptr;
+    State* calledEntryState = nullptr;
 
     /**
      * Set to a valid state pointer just before calling a states exit() function.
      * This is used to avoid re-calling the exit() function is the exit function
      * calls transitionTo() to a PARENT state.
      */
-    State<Event>* calledExitState = nullptr;
+    State* calledExitState = nullptr;
 
     /**
      * Keeps track of how many times transitionTo() has been called recursively.
@@ -101,7 +100,7 @@ protected:
      * @brief Trigger a transition to a state.
      * @param state The state to transition to.
      */
-    void transitionTo(State<Event> * state) {
+    void transitionTo(State * state) {
         transitionToCalled = true;
         maxRecursionCount++;
         if (maxRecursionCount > MAX_RECURSION_COUNT) {
@@ -110,7 +109,7 @@ protected:
         uint32_t ourRecursionCount = maxRecursionCount;
 
         // Rename just for readability below
-        State<Event>* destinationState = state;
+        State* destinationState = state;
 
 
         // If the new destination state is a child of the previous entry() function,
@@ -140,7 +139,7 @@ protected:
             // state and all of it's parents. If the current state is found,
             // Move down one state. If the current state is not found there, we
             // need to move to the current state's parent
-            State<Event>* stateInDestinationBranch = destinationState;
+            State* stateInDestinationBranch = destinationState;
             bool foundCurrentStateInDestinationBranch = false;
             while (stateInDestinationBranch != nullptr) {
                 if (stateInDestinationBranch->parent == currentState) {
@@ -187,8 +186,8 @@ protected:
         }
     } // transitionTo()
 
-    bool isChildOf(State<Event>* parent, State<Event>* child) {
-        State<Event>* state = child;
+    bool isChildOf(State* parent, State* child) {
+        State* state = child;
         while (state != nullptr) {
             if (state == parent) {
                 return true;

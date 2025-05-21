@@ -45,7 +45,7 @@ public:
   };
 };
 
-class TestHsm : public StateMachine<Event> {
+class TestHsm : public StateMachine {
 public:
     TestHsm() : 
       state1(
@@ -154,40 +154,40 @@ public:
         nullptr
       ) {}
 
-    State<Event> state1;
-    State<Event> state1A;
-    State<Event> state1B;
-    State<Event> state1C;
-    State<Event> state2;
-    State<Event> state3;
-    State<Event> state4;
-    State<Event> state4A;
+    State state1;
+    State state1A;
+    State state1B;
+    State state1C;
+    State state2;
+    State state3;
+    State state4;
+    State state4A;
 
     /**
      * State 5 is for testing multiple transitionTo() calls within entry functions.
      */
-    State<Event> state5;
-    State<Event> state5A;
-    State<Event> state5A1;
+    State state5;
+    State state5A;
+    State state5A1;
 
     /**
      * State 6 is for testing transitionTo() calls to
      * child states within exit functions.
      */
-    State<Event> state6;
-    State<Event> state6A;
+    State state6;
+    State state6A;
 
     /**
      * State 7 is for testing transitionTo() calls to
      * parent states within exit functions.
      */
-    State<Event> state7;
+    State state7;
 
     /**
      * State 8 is for testing transitionTo() calls to
      * the entry function to oneself. This should cause a re-entry.
      */
-    State<Event> state8;
+    State state8;
 
     uint32_t state1EntryCallCount = 0;
     uint32_t state1EventCallCount = 0;
@@ -261,8 +261,9 @@ private:
         state1EntryCallCount++;
     }
 
-    virtual void state1_event(const Event * event) {
+    virtual void state1_event(const void * eventRaw) {
         std::cout << "state1_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
 
         if (event->id == EventId::GO_TO_STATE_1) {
             transitionTo(&state1);
@@ -308,8 +309,9 @@ private:
         state1aEntryCallCount++;
     }
 
-    virtual void state1a_event(const Event * event) {
+    virtual void state1a_event(const void * eventRaw) {
         std::cout << "state1a_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
 
         if (event->id == EventId::GO_TO_STATE_2) {
             transitionTo(&state2);
@@ -336,8 +338,9 @@ private:
         transitionTo(&state1C);
     }
 
-    virtual void state1b_event(const Event * event) {
+    virtual void state1b_event(const void * eventRaw) {
         std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state1bEventCallCount++;
     }
 
@@ -355,8 +358,9 @@ private:
         state1cEntryCallCount++;
     }
 
-    virtual void state1c_event(const Event * event) {
+    virtual void state1c_event(const void * eventRaw) {
         std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state1cEventCallCount++;
     }
 
@@ -374,8 +378,9 @@ private:
         state2EntryCallCount++;
     }
 
-    virtual void state2_event(const Event * event) {
+    virtual void state2_event(const void * eventRaw) {
         std::cout << "state2_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state2EventCallCount++;
     }
 
@@ -395,8 +400,9 @@ private:
         transitionTo(&state1);
     }
 
-    virtual void state3_event(const Event * event) {
+    virtual void state3_event(const void * eventRaw) {
         std::cout << "state3_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state3EventCallCount++;
     }
 
@@ -416,8 +422,9 @@ private:
         transitionTo(&state4A);
     }
 
-    virtual void state4_event(const Event * event) {
+    virtual void state4_event(const void * eventRaw) {
         std::cout << "state4_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state4EventCallCount++;
     }
 
@@ -435,8 +442,9 @@ private:
         state4aEntryCallCount++;
     }
 
-    virtual void state4a_event(const Event * event) {
+    virtual void state4a_event(const void * eventRaw) {
         std::cout << "state4a_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state4aEventCallCount++;
     }
 
@@ -455,8 +463,9 @@ private:
         transitionTo(&state5A);
     }
 
-    virtual void state5_event(const Event * event) {
+    virtual void state5_event(const void * eventRaw) {
         std::cout << "state5_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state5EventCallCount++;
     }
 
@@ -475,8 +484,9 @@ private:
         transitionTo(&state5A1);
     }
 
-    virtual void state5a_event(const Event * event) {
+    virtual void state5a_event(const void * eventRaw) {
         std::cout << "state5a_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state5aEventCallCount++;
     }
 
@@ -495,8 +505,9 @@ private:
         transitionTo(&state1);
     }
 
-    virtual void state5a1_event(const Event * event) {
+    virtual void state5a1_event(const void * eventRaw) {
         std::cout << "state5a1_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state5a1EventCallCount++;
     }
 
@@ -514,8 +525,9 @@ private:
         state6EntryCallCount++;
     }
 
-    virtual void state6_event(const Event * event) {
+    virtual void state6_event(const void * eventRaw) {
         std::cout << "state6_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state6EventCallCount++;
 
         if (event->id == EventId::GO_TO_STATE_1) {
@@ -538,8 +550,9 @@ private:
         state6aEntryCallCount++;
     }
 
-    virtual void state6a_event(const Event * event) {
+    virtual void state6a_event(const void * eventRaw) {
         std::cout << "state6a_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state6aEventCallCount++;
     }
 
@@ -557,8 +570,9 @@ private:
         state7EntryCallCount++;
     }
 
-    virtual void state7_event(const Event * event) {
+    virtual void state7_event(const void * eventRaw) {
         std::cout << "state7_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state7EventCallCount++;
         if (event->id == EventId::GO_TO_STATE_1) {
             transitionTo(&state1);
@@ -588,8 +602,9 @@ private:
         }
     }
 
-    virtual void state8_event(const Event * event) {
+    virtual void state8_event(const void * eventRaw) {
         std::cout << "state8_event" << std::endl;
+        const Event * event = static_cast<const Event *>(eventRaw);
         state8EventCallCount++;
     }
 
