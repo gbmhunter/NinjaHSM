@@ -34,7 +34,7 @@ public:
      * 
      * @param[in] event The event to handle.
      */
-    void handleEvent(Event * event) {
+    void handleEvent(const void * eventRaw) {
         // The event handler could call transitionTo() to change the state, and/or
         // call eventHandled() to indicate that the event was handled. If any of these
         // occur, we do not want to propagate the event to the parent state.
@@ -42,7 +42,7 @@ public:
         eventHandledCalled = false;
         State* stateToHandleEvent = currentState;
         while (stateToHandleEvent != nullptr) {
-            stateToHandleEvent->event(event);
+            stateToHandleEvent->event(eventRaw);
             if (transitionToCalled || eventHandledCalled) {
                 break;
             }
