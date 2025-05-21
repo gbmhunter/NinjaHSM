@@ -32,7 +32,8 @@ FetchContent_Declare(NinjaHSM
 FetchContent_MakeAvailable(NinjaHSM)
 
 # Then later once you've defined your target
-target_link_libraries(your_app NinjaHsm)
+target_link_libraries(your_app PRIVATE NinjaHsm)
+target_include_directories(your_app PRIVATE ${NinjaHSM_SOURCE_DIR}/include)
 ```
 
 Then all you need to do is include the NinjaHSM header in your source files and begin using it (see the Usage section below for more details):
@@ -91,9 +92,9 @@ public:
 
 ## Creating A State Machine
 
-Now we have our events defined, we can create a state machine. You need to make your own state machine class which inherits from `NinjaHSM::StateMachine<Event>`. This of your class AS A state machine, but the `NinjaHSM::StateMachine` class provides a lot of the boilerplate code for you, including the transition logic.
+Now we have our events defined, we can create a state machine. You need to make your own state machine class which inherits from `NinjaHSM::StateMachine`. This of your class AS A state machine, but the `NinjaHSM::StateMachine` class provides a lot of the boilerplate code for you, including the transition logic.
 
-In your class, you will need to create a `NinjaHSM::State<Event>` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent). Use the pointer to the parent state to create a hierarchical state machine (HSM).
+In your class, you will need to create a `NinjaHSM::State` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent). Use the pointer to the parent state to create a hierarchical state machine (HSM).
 
 The following example creates a basic hierarchical state machine with three states, one of which is a child state. The hierarchy looks like this:
 
@@ -103,47 +104,50 @@ State1
 State2
 ```
 
-Here is the C++ code:
+Lambas are used instead of `std::bind` to provide class methods as callbacks since they use no dynamic memory allocation when there are small number of captures (small buffer optimization). Here is the C++ code:
 
 ```cpp
-class MyStateMachine : public StateMachine<Event> {
+#include "NinjaHSM/NinjaHSM.hpp"
+
+class MyStateMachine : public NinjaHSM::StateMachine {
 public:
-    MyStateMachine() : StateMachine(),
+    MyStateMachine() : NinjaHSM::StateMachine(),
     state1(
         "State1",
-        std::bind(&MyStateMachine::state1_entry, this),
-        std::bind(&MyStateMachine::state1_event, this, std::placeholders::_1),
-        std::bind(&MyStateMachine::state1_exit, this),
+        [this]() { state1_entry(); },
+        [this](const NinjaHSM::Event& event) { return state1_event(event); },
+        [this]() { state1_exit(); },
         nullptr
       ),
       state1a(
         "State1a",
-        std::bind(&MyStateMachine::state1a_entry, this),
-        std::bind(&MyStateMachine::state1a_event, this, std::placeholders::_1),
-        std::bind(&MyStateMachine::state1a_exit, this),
+        [this]() { state1a_entry(); },
+        [this](const NinjaHSM::Event& event) { return state1a_event(event); },
+        [this]() { state1a_exit(); },
         &state1
       ),
       state2(
         "State2",
-        std::bind(&MyStateMachine::state2_entry, this),
-        std::bind(&MyStateMachine::state2_event, this, std::placeholders::_1),
-        std::bind(&MyStateMachine::state2_exit, this),
+        [this]() { state2_entry(); },
+        [this](const NinjaHSM::Event& event) { return state2_event(event); },
+        [this]() { state2_exit(); },
         nullptr
       ) {
         transitionTo(&state1);
     }
 
 private:
-    State<Event> state1;
-    State<Event> state1a;
-    State<Event> state2;
+    NinjaHSM::State state1;
+    NinjaHSM::State state1a;
+    NinjaHSM::State state2;
 
     //============================================================================================//
     // state1
     //============================================================================================//
 
     void state1_entry() {}
-    void state1_event(const Event * event) {
+    void state1_event(const void * eventRaw) {
+        const Event * event = static_cast<const Event *>(eventRaw);
         if (event->id == EventId::EVENT_WITH_NO_DATA) {
             // Let's go to a different state!
             transitionTo(&state1a);
@@ -162,7 +166,7 @@ private:
     //============================================================================================//
 
     void state1a_entry() {}
-    void state1a_event(const Event * event) {}
+    void state1a_event(const void * event) {}
     void state1a_exit() {}
 
     //============================================================================================//
@@ -170,18 +174,18 @@ private:
     //============================================================================================//
 
     void state2_entry() {}
-    void state2_event(const Event * event) {}
+    void state2_event(const void * eventRaw) {}
     void state2_exit() {}
 };
 ```
 
-The template parameter `<Event>` is just so that rather than passing in the events a `void *`, we have proper typing. Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event).
+Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event).
 
-Inheriting from `StateMachine<Event>` gives you the following methods available on your state machine class:
+Inheriting from `StateMachine` gives you the following methods available on your state machine class:
 
-* `initialTransitionTo(State<Event> * state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
-* `handleEvent(Event * event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
-* `transitionTo(State<Event> * state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
+* `initialTransitionTo(State * state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
+* `handleEvent(void * rawEvent)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
+* `transitionTo(State * state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
 * `getCurrentState()`: Gets the current state.
 * `eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states.
 
@@ -196,14 +200,14 @@ int main() {
 
     // Send an event with no data, this causes a change in state (see the state1_event() method).
     Event event1(EventId::EVENT_WITH_NO_DATA);
-    stateMachine.handleEvent(&event1);
+    stateMachine.handleEvent(static_cast<void*>(&event1));
     printf("Event 1 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
 
     // Send an event with data, this doesn't change the state, but just shows how you can
     // react to data passed in with the event.
     Event event2(EventId::EVENT_WITH_DATA_1);
     event2.data1.data = 123;
-    stateMachine.handleEvent(&event2);
+    stateMachine.handleEvent(static_cast<void*>(&event2));
     printf("Event 2 handled. state is now: %s\n", stateMachine.getCurrentState()->name);
     
     return 0;
