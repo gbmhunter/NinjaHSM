@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Removed the templating on the `Event` class, just uses a `void *` instead. This allows the user to not have to keep their entire state machine in the header file.
+- Change use of pointers to references where appropriate.
+- Added `const` qualifiers where appropriate.
 
 ### Fixed
 

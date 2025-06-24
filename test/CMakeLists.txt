@@ -11,5 +11,8 @@ target_link_libraries(
   gmock_main
 )
 
+# Add compiler flag -Wfatal-errors
+target_compile_options(tests PRIVATE -Wfatal-errors)
+
 include(GoogleTest)
 gtest_discover_tests(tests)

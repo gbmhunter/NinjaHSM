@@ -14,6 +14,7 @@ namespace NinjaHSM {
  */
 constexpr uint32_t MAX_RECURSION_COUNT = 50;
 
+template <typename EventType>
 class StateMachine {
 public:
     StateMachine() {}
@@ -24,7 +25,7 @@ public:
      * 
      * @param[in] state The initial state to transition to.
      */
-    void initialTransitionTo(State * state) {
+    void initialTransitionTo(const State<EventType>& state) {
         transitionTo(state);
     }
 
@@ -34,16 +35,16 @@ public:
      * 
      * @param[in] event The event to handle.
      */
-    void handleEvent(const void * eventRaw) {
+    void handleEvent(const EventType& event) {
         // The event handler could call transitionTo() to change the state, and/or
         // call eventHandled() to indicate that the event was handled. If any of these
         // occur, we do not want to propagate the event to the parent state.
-        transitionToCalled = false;
-        eventHandledCalled = false;
-        State* stateToHandleEvent = currentState;
+        m_transitionToCalled = false;
+        m_eventHandledCalled = false;
+        const State<EventType>* stateToHandleEvent = m_currentState;
         while (stateToHandleEvent != nullptr) {
-            stateToHandleEvent->event(eventRaw);
-            if (transitionToCalled || eventHandledCalled) {
+            stateToHandleEvent->event(event);
+            if (m_transitionToCalled || m_eventHandledCalled) {
                 break;
             }
             stateToHandleEvent = stateToHandleEvent->parent;
@@ -51,98 +52,61 @@ public:
     }
 
     /**
-     * Get the current state of the state machine.
+     * Get the current state of the state machine. Can be nullptr before initial transition occurs
+     * due to transitionTo() being called.
      * 
      * @return A pointer to the current state.
      */
-    State* getCurrentState() {
-        return currentState;
+    const State<EventType>* getCurrentState() {
+        return m_currentState;
     }
-
-    /**
-     * Indicate to the state machine that an event was handled and event bubbling should stop.
-     * This function should be called only inside state onEvent() functions.
-     * 
-     * Calling transitionTo() from within a state's onEvent() function will also stop event bubbling.
-     */
-    void eventHandled() {
-        eventHandledCalled = true;
-    }
-
-protected:
-
-    State* currentState = nullptr;
-
-    bool transitionToCalled = false;
-
-    bool eventHandledCalled = false;
-
-    /**
-     * Set to a valid state pointer just before calling a states entry() function.
-     * This is used to avoid re-calling the entry() function is the entry function
-     * calls transitionTo() to a CHILD state.
-     */
-    State* calledEntryState = nullptr;
-
-    /**
-     * Set to a valid state pointer just before calling a states exit() function.
-     * This is used to avoid re-calling the exit() function is the exit function
-     * calls transitionTo() to a PARENT state.
-     */
-    State* calledExitState = nullptr;
-
-    /**
-     * Keeps track of how many times transitionTo() has been called recursively.
-     */
-    uint32_t maxRecursionCount = 0;
 
     /**
      * @brief Trigger a transition to a state.
      * @param state The state to transition to.
      */
-    void transitionTo(State * state) {
-        transitionToCalled = true;
-        maxRecursionCount++;
-        if (maxRecursionCount > MAX_RECURSION_COUNT) {
+    void transitionTo(const State<EventType>& state) {
+        m_transitionToCalled = true;
+        m_maxRecursionCount++;
+        if (m_maxRecursionCount > MAX_RECURSION_COUNT) {
             return;
         }
-        uint32_t ourRecursionCount = maxRecursionCount;
+        uint32_t ourRecursionCount = m_maxRecursionCount;
 
         // Rename just for readability below
-        State* destinationState = state;
-
+        const State<EventType>* destinationState = &state;
 
         // If the new destination state is a child of the previous entry() function,
         // we don't want to re-call the entry() function (we assume the state was entered).
-        if (calledEntryState != nullptr && isChildOf(calledEntryState, destinationState)) {
-            currentState = calledEntryState;
-            calledEntryState = nullptr; // Clear flag
+        if (m_calledEntryState != nullptr && isChildOf(m_calledEntryState, destinationState)) {
+            m_currentState = m_calledEntryState;
+            m_calledEntryState = nullptr; // Clear flag
         }
 
-        if (calledExitState != nullptr && !isChildOf(calledExitState, destinationState)) {
-            currentState = calledExitState->parent;
-            calledExitState = nullptr; // Clear flag
+        if (m_calledExitState != nullptr && !isChildOf(m_calledExitState, destinationState)) {
+            m_currentState = m_calledExitState->parent;
+            m_calledExitState = nullptr; // Clear flag
         }
 
-        if (currentState == destinationState) {
-            currentState->exit();
-            if (ourRecursionCount != maxRecursionCount) {
+        if (m_currentState == destinationState) {
+            m_currentState->exit();
+            if (ourRecursionCount != m_maxRecursionCount) {
                 goto END;
             }
-            currentState = currentState->parent;
+            m_currentState = m_currentState->parent;
         }
 
         // This loop handles one entry or exit per iteration.
-        while (currentState != destinationState) {
+        while (m_currentState != destinationState) {
             // Logic:
             // Search for the current state in the tree containing the destination
             // state and all of it's parents. If the current state is found,
             // Move down one state. If the current state is not found there, we
             // need to move to the current state's parent
-            State* stateInDestinationBranch = destinationState;
+            const State<EventType>* stateInDestinationBranch = destinationState;
             bool foundCurrentStateInDestinationBranch = false;
             while (stateInDestinationBranch != nullptr) {
-                if (stateInDestinationBranch->parent == currentState) {
+                if (stateInDestinationBranch->parent == m_currentState) {
                     foundCurrentStateInDestinationBranch = true;
                     break;
                 }
@@ -156,25 +120,25 @@ protected:
             if (foundCurrentStateInDestinationBranch) {
                 // We've found the current state in the destination branch.
                 // Move down one state.
-                calledEntryState = stateInDestinationBranch;
+                m_calledEntryState = stateInDestinationBranch;
                 stateInDestinationBranch->entry();
-                calledEntryState = nullptr;
-                if (ourRecursionCount != maxRecursionCount) {
+                m_calledEntryState = nullptr;
+                if (ourRecursionCount != m_maxRecursionCount) {
                     break;
                 }
-                currentState = stateInDestinationBranch;
+                m_currentState = stateInDestinationBranch;
                 continue;
             }
 
             // If we get here, we need to exit the current state.
             // Transition to the top most parent of the destination state.
-            calledExitState = currentState;
-            currentState->exit();
-            calledExitState = nullptr; // Clear flag
-            if (ourRecursionCount != maxRecursionCount) {
+            m_calledExitState = m_currentState;
+            m_currentState->exit();
+            m_calledExitState = nullptr; // Clear flag
+            if (ourRecursionCount != m_maxRecursionCount) {
                 break;
             }
-            currentState = currentState->parent; // This might be nullptr
+            m_currentState = m_currentState->parent; // This might be nullptr
         }
 
         END:
@@ -182,12 +146,56 @@ protected:
         // If we are at the top of the recursion, reset the recursion index so it's
         // ready for the next non-recursive transitionTo() call.
         if (ourRecursionCount == 1) {
-            maxRecursionCount = 0;
+            m_maxRecursionCount = 0;
         }
     } // transitionTo()
 
-    bool isChildOf(State* parent, State* child) {
-        State* state = child;
+    /**
+     * Indicate to the state machine that an event was handled and event bubbling should stop.
+     * This function should be called only inside state onEvent() functions.
+     * 
+     * Calling transitionTo() from within a state's onEvent() function will also stop event bubbling.
+     */
+    void eventHandled() {
+        m_eventHandledCalled = true;
+    }
+
+protected:
+
+    const State<EventType>* m_currentState = nullptr;
+
+    bool m_transitionToCalled = false;
+
+    bool m_eventHandledCalled = false;
+
+    /**
+     * Set to a valid state pointer just before calling a states entry() function.
+     * This is used to avoid re-calling the entry() function is the entry function
+     * calls transitionTo() to a CHILD state.
+     */
+    const State<EventType>* m_calledEntryState = nullptr;
+
+    /**
+     * Set to a valid state pointer just before calling a states exit() function.
+     * This is used to avoid re-calling the exit() function is the exit function
+     * calls transitionTo() to a PARENT state.
+     */
+    const State<EventType>* m_calledExitState = nullptr;
+
+    /**
+     * Keeps track of how many times transitionTo() has been called recursively.
+     */
+    uint32_t m_maxRecursionCount = 0;
+
+    /**
+     * Check if a child state is a child of a parent state.
+     * 
+     * @param parent The parent state.
+     * @param child The potential child state.
+     * @return True if the child is a child of the parent, false otherwise.
+     */
+    bool isChildOf(const State<EventType>* parent, const State<EventType>* child) {
+        const State<EventType>* state = child;
         while (state != nullptr) {
             if (state == parent) {
                 return true;
