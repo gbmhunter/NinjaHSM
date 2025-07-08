@@ -176,10 +176,10 @@ Notice how in the `state1_event()` method, we listen to some events and take act
 
 Inheriting from `StateMachine` gives you the following methods available on your state machine class:
 
-* `initialTransitionTo(State * state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
-* `handleEvent(void * rawEvent)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
-* `transitionTo(State * state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
-* `getCurrentState()`: Gets the current state.
+* `initialTransitionTo(State& state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
+* `handleEvent(const Event& event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
+* `transitionTo(State& state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
+* `State* getCurrentState()`: Gets the current state. May be `nullptr` if the state machine has not been initialized yet.
 * `eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states.
 
 Now we can create an instance of our state machine and start sending events to it:
