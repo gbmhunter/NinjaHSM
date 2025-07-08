@@ -56,38 +56,32 @@ using namespace NinjaHSM;
 
 ### Defining Events
 
-You will need to define an `Event` class. This will be used to pass events to the `onEvent()` method, so your state machine can react to things. I use a `union` below to that each event can have an ID and some associated data.
+You will need to define an `Event` class. This will be used to pass events to the `onEvent()` method, so your state machine can react to things. But you will normally want to define more than one event type. The best way to create a generic "typesafe union" of all the events using `std::variant` as shown below.
 
 ```cpp
-// Used to identify what event we have.
-enum class EventId {
-    EVENT_WITH_NO_DATA,
-    EVENT_WITH_DATA_1,
-    EVENT_WITH_DATA_2,
+/**
+ * Wrap all the events in a namespace for ease of use.
+ */
+namespace Events {
+
+/**
+ * Events don't have to have any data associated with them, like this one!
+ */
+struct TimerExpired {};
+
+/**
+ * This event has some data associated with it.
+ */
+struct ButtonPressed {
+    uint32_t buttonId;
 };
 
-class EventWithData1 {
-public:
-    EventWithData1(uint32_t data) : data(data) {}
-    uint32_t data;
-};
+/**
+ * This is like a typesafe "union" of all the events.
+ */
+using Generic = std::variant<TimerExpired, ButtonPressed>;
 
-class EventWithData2 {
-public:
-    EventWithData2(int64_t data) : data(data) {}
-    int64_t data;
-};
-
-// This is the "wrapper" class.
-class Event {
-public:
-    Event(EventId id) : id(id) {}
-    EventId id;
-    union {
-        EventWithData1 data1;
-        EventWithData2 data2;
-    };
-};
+}
 ```
 
 ## Creating A State Machine
@@ -107,55 +101,54 @@ State2
 Lambas are used instead of `std::bind` to provide class methods as callbacks since they use no dynamic memory allocation when there are small number of captures (small buffer optimization). Here is the C++ code:
 
 ```cpp
-#include "NinjaHSM/NinjaHSM.hpp"
+#include <NinjaHSM/NinjaHSM.hpp>
 
-class MyStateMachine : public NinjaHSM::StateMachine {
+class MyStateMachine : public StateMachine<Events::Generic> {
 public:
-    MyStateMachine() : NinjaHSM::StateMachine(),
+    MyStateMachine() : StateMachine(),
     state1(
         "State1",
         [this]() { state1_entry(); },
-        [this](const NinjaHSM::Event& event) { return state1_event(event); },
+        [this](Events::Generic const & event) { state1_event(event); },
         [this]() { state1_exit(); },
         nullptr
       ),
       state1a(
         "State1a",
         [this]() { state1a_entry(); },
-        [this](const NinjaHSM::Event& event) { return state1a_event(event); },
+        [this](Events::Generic const & event) { state1a_event(event); },
         [this]() { state1a_exit(); },
         &state1
       ),
       state2(
         "State2",
         [this]() { state2_entry(); },
-        [this](const NinjaHSM::Event& event) { return state2_event(event); },
+        [this](Events::Generic const & event) { state2_event(event); },
         [this]() { state2_exit(); },
         nullptr
       ) {
-        transitionTo(&state1);
+        transitionTo(state1);
     }
 
 private:
-    NinjaHSM::State state1;
-    NinjaHSM::State state1a;
-    NinjaHSM::State state2;
+    State<Events::Generic> state1;
+    State<Events::Generic> state1a;
+    State<Events::Generic> state2;
 
     //============================================================================================//
     // state1
     //============================================================================================//
 
     void state1_entry() {}
-    void state1_event(const void * eventRaw) {
-        const Event * event = static_cast<const Event *>(eventRaw);
-        if (event->id == EventId::EVENT_WITH_NO_DATA) {
+    void state1_event(Events::Generic const & event) {
+        if (std::holds_alternative<Events::TimerExpired>(event)) {
             // Let's go to a different state!
-            transitionTo(&state1a);
+            transitionTo(state1a);
         }
-        else if (event->id == EventId::EVENT_WITH_DATA_1) {
+        else if (std::holds_alternative<Events::ButtonPressed>(event)) {
             // We know which event we got, so we can safely access the union member
-            EventWithData1 const * eventWithData = &event->data1;
-            printf("Got event with data: %d\n", eventWithData->data);
+            Events::ButtonPressed const & buttonPressed = std::get<Events::ButtonPressed>(event);
+            printf("Got event with data: %d\n", buttonPressed.buttonId);
             eventHandled(); // Prevents event from bubbling up to parent states
         }
     }
@@ -166,7 +159,7 @@ private:
     //============================================================================================//
 
     void state1a_entry() {}
-    void state1a_event(const void * event) {}
+    void state1a_event(Events::Generic const & event) {}
     void state1a_exit() {}
 
     //============================================================================================//
@@ -174,7 +167,7 @@ private:
     //============================================================================================//
 
     void state2_entry() {}
-    void state2_event(const void * eventRaw) {}
+    void state2_event(Events::Generic const & event) {}
     void state2_exit() {}
 };
 ```

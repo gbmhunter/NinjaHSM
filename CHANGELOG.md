@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added more info to the README.
+
 ### Changed
 
 - Change use of pointers to references where appropriate.
