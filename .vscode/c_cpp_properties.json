@@ -4,7 +4,7 @@
             "name": "Basic Example",
             "configurationProvider": "ms-vscode.cmake-tools",
             "compileCommands": [
-                "${workspaceFolder}/build/test/compile_commands.json"
+                "${workspaceFolder}/examples/basic_example/build/compile_commands.json"
             ]
         },
     ],

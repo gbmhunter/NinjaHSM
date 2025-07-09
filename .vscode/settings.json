@@ -1,4 +1,5 @@
 {
+    "C_Cpp.intelliSenseEngine": "default",
     "files.associations": {
         "any": "cpp",
         "array": "cpp",

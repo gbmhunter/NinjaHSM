@@ -41,35 +41,31 @@ using Generic = std::variant<TimerExpired, ButtonPressed>;
 class MyStateMachine : public StateMachine<Events::Generic> {
 public:
     MyStateMachine() : StateMachine(),
-    state1(
+    m_state1(
         "State1",
         [this]() { state1_entry(); },
         [this](Events::Generic const & event) { state1_event(event); },
         [this]() { state1_exit(); },
         nullptr
       ),
-      state1a(
+      m_state1a(
         "State1a",
         [this]() { state1a_entry(); },
         [this](Events::Generic const & event) { state1a_event(event); },
         [this]() { state1a_exit(); },
-        &state1
+        &m_state1
       ),
-      state2(
+      m_state2(
         "State2",
         [this]() { state2_entry(); },
         [this](Events::Generic const & event) { state2_event(event); },
         [this]() { state2_exit(); },
         nullptr
       ) {
-        transitionTo(state1);
+        initialTransitionTo(m_state1);
     }
 
 private:
-    State<Events::Generic> state1;
-    State<Events::Generic> state1a;
-    State<Events::Generic> state2;
-
     //============================================================================================//
     // state1
     //============================================================================================//
@@ -78,7 +74,7 @@ private:
     void state1_event(Events::Generic const & event) {
         if (std::holds_alternative<Events::TimerExpired>(event)) {
             // Let's go to a different state!
-            transitionTo(state1a);
+            transitionTo(m_state1a);
         }
         else if (std::holds_alternative<Events::ButtonPressed>(event)) {
             // We know which event we got, so we can safely access the union member
@@ -104,6 +100,14 @@ private:
     void state2_entry() {}
     void state2_event(Events::Generic const & event) {}
     void state2_exit() {}
+
+    //============================================================================================//
+    // State variables
+    //============================================================================================//
+
+    State<Events::Generic> m_state1;
+    State<Events::Generic> m_state1a;
+    State<Events::Generic> m_state2;
 };
 
 int main() {

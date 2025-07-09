@@ -88,6 +88,8 @@ using Generic = std::variant<TimerExpired, ButtonPressed>;
 
 Now we have our events defined, we can create a state machine. You need to make your own state machine class which inherits from `NinjaHSM::StateMachine`. This of your class AS A state machine, but the `NinjaHSM::StateMachine` class provides a lot of the boilerplate code for you, including the transition logic.
 
+NOTE: You don't actually need to inherit from `NinjaHSM::StateMachine` if you don't want to. You can just use composition and create a `NinjaHSM::StateMachine` object and call it's methods directly. Inheritance does feel like the more intuitive way though since you have to define all the states and state functions in your class anyway.
+
 In your class, you will need to create a `NinjaHSM::State` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent). Use the pointer to the parent state to create a hierarchical state machine (HSM).
 
 The following example creates a basic hierarchical state machine with three states, one of which is a child state. The hierarchy looks like this:
@@ -106,35 +108,31 @@ Lambas are used instead of `std::bind` to provide class methods as callbacks sin
 class MyStateMachine : public StateMachine<Events::Generic> {
 public:
     MyStateMachine() : StateMachine(),
-    state1(
+    m_state1(
         "State1",
         [this]() { state1_entry(); },
         [this](Events::Generic const & event) { state1_event(event); },
         [this]() { state1_exit(); },
         nullptr
       ),
-      state1a(
+      m_state1a(
         "State1a",
         [this]() { state1a_entry(); },
         [this](Events::Generic const & event) { state1a_event(event); },
         [this]() { state1a_exit(); },
-        &state1
+        &m_state1
       ),
-      state2(
+      m_state2(
         "State2",
         [this]() { state2_entry(); },
         [this](Events::Generic const & event) { state2_event(event); },
         [this]() { state2_exit(); },
         nullptr
       ) {
-        transitionTo(state1);
+        initialTransitionTo(m_state1);
     }
 
 private:
-    State<Events::Generic> state1;
-    State<Events::Generic> state1a;
-    State<Events::Generic> state2;
-
     //============================================================================================//
     // state1
     //============================================================================================//
@@ -143,7 +141,7 @@ private:
     void state1_event(Events::Generic const & event) {
         if (std::holds_alternative<Events::TimerExpired>(event)) {
             // Let's go to a different state!
-            transitionTo(state1a);
+            transitionTo(m_state1a);
         }
         else if (std::holds_alternative<Events::ButtonPressed>(event)) {
             // We know which event we got, so we can safely access the union member
@@ -169,6 +167,14 @@ private:
     void state2_entry() {}
     void state2_event(Events::Generic const & event) {}
     void state2_exit() {}
+
+    //============================================================================================//
+    // State variables
+    //============================================================================================//
+
+    State<Events::Generic> m_state1;
+    State<Events::Generic> m_state1a;
+    State<Events::Generic> m_state2;
 };
 ```
 
