@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+n/a
+
+## [1.2.0] - 2025-09-17
+
 ### Changed
 
 - Changed to use ETL delegates instead of lambdas to provide class methods as callbacks in the `State` class. This completely removes the chance of dynamic memory allocation, whereas before we were relying on the small number of captures optimization of lambdas.
@@ -55,7 +59,8 @@ Initial release.
 - Events stop bubbling up if a child state calls `transitionTo()` or `eventHandled()`.
 - Added a test suite.
 
-[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/gbmhunter/NinjaHSM/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/gbmhunter/NinjaHSM/releases/tag/v0.1.0
