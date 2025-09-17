@@ -5,16 +5,16 @@ project(basic_example)
 # Required for the VSCode C/C++ extension to work
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(FetchContent)
-FetchContent_Declare(NinjaHSM
-    GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG a7a1ef98bdeeeca4b33c1cb974765956caae68b0
-    # GIT_TAG v0.1.0 # This can be a hash, tag or branch.
-)
-FetchContent_MakeAvailable(NinjaHSM)
+# include(FetchContent)
+# FetchContent_Declare(NinjaHSM
+#     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
+#     GIT_TAG a7a1ef98bdeeeca4b33c1cb974765956caae68b0
+#     # GIT_TAG v0.1.0 # This can be a hash, tag or branch.
+# )
+# FetchContent_MakeAvailable(NinjaHSM)
 
 # Comment out the FetchContent stuff above and use this below if you want to run the example on the version of NinjaHSM in the repo at this point in time. Useful for testing.
-# add_subdirectory(../../ ${CMAKE_CURRENT_BINARY_DIR}/ninjahsm)
+add_subdirectory(../../ ${CMAKE_CURRENT_BINARY_DIR}/ninjahsm)
 
 add_executable(
     basic_example

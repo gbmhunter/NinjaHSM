@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Changed to use ETL delegates instead of lambdas to provide class methods as callbacks in the `State` class. This completely removes the chance of dynamic memory allocation, whereas before we were relying on the small number of captures optimization of lambdas.
+
 ## [1.1.0] - 2025-07-08
 
 ### Added

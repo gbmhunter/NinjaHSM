@@ -12,12 +12,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # build the test application.
 option(NINJAHSM_BUILD_TESTS "Build NinjaHSM tests" OFF)
 
+include(FetchContent)
+FetchContent_Declare(
+    etl
+    GIT_REPOSITORY https://github.com/ETLCPP/etl.git
+    GIT_TAG 20.39.4
+)
+FetchContent_MakeAvailable(etl)
+
 include_directories(include)
 add_library(NinjaHSM INTERFACE)
 target_include_directories(NinjaHSM INTERFACE include)
+target_link_libraries(NinjaHSM INTERFACE etl::etl)
 
 if(NINJAHSM_BUILD_TESTS)
-    include(FetchContent)
     FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip

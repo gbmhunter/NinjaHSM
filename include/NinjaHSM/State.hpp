@@ -1,17 +1,21 @@
 #pragma once
 
-#include <functional>
+#include <etl/delegate.h>
 
 namespace NinjaHSM {
 
 template <typename EventType>
 class State {
 public:
+    using EntryDelegate = etl::delegate<void()>;
+    using EventDelegate = etl::delegate<void(const EventType&)>;
+    using ExitDelegate = etl::delegate<void()>;
+
     State(
         const char * name,
-        std::function<void()> entry,
-        std::function<void(const EventType&)> event,
-        std::function<void()> exit,
+        EntryDelegate entry,
+        EventDelegate event,
+        ExitDelegate exit,
         State * parent) :
             name(name),
             entry(entry),
@@ -20,9 +24,9 @@ public:
             parent(parent) {}
 
     const char * name;
-    std::function<void()> entry;
-    std::function<void(const EventType&)> event;
-    std::function<void()> exit;
+    EntryDelegate entry;
+    EventDelegate event;
+    ExitDelegate exit;
 
     State * parent = nullptr;
 }; // class State

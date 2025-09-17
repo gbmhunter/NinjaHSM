@@ -43,23 +43,23 @@ public:
     MyStateMachine() : StateMachine(),
     m_state1(
         "State1",
-        [this]() { state1_entry(); },
-        [this](Events::Generic const & event) { state1_event(event); },
-        [this]() { state1_exit(); },
+        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this),
+        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1_event>(*this),
+        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1_exit>(*this),
         nullptr
       ),
       m_state1a(
         "State1a",
-        [this]() { state1a_entry(); },
-        [this](Events::Generic const & event) { state1a_event(event); },
-        [this]() { state1a_exit(); },
+        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1a_entry>(*this),
+        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1a_event>(*this),
+        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1a_exit>(*this),
         &m_state1
       ),
       m_state2(
         "State2",
-        [this]() { state2_entry(); },
-        [this](Events::Generic const & event) { state2_event(event); },
-        [this]() { state2_exit(); },
+        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state2_entry>(*this),
+        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state2_event>(*this),
+        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state2_exit>(*this),
         nullptr
       ) {
         initialTransitionTo(m_state1);

@@ -47,110 +47,110 @@ public:
 
 class TestHsm : public StateMachine<Event> {
 public:
-    TestHsm() : 
+    TestHsm() :
       state1(
         "State1",
-        std::bind(&TestHsm::state1_entry, this),
-        std::bind(&TestHsm::state1_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state1_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state1_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state1_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state1_exit>(*this),
         nullptr
       ),
       state1A(
         "State1A",
-        std::bind(&TestHsm::state1a_entry, this),
-        std::bind(&TestHsm::state1a_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state1a_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state1a_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state1a_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state1a_exit>(*this),
         &state1
       ),
       state1B(
         "State1B",
-        std::bind(&TestHsm::state1b_entry, this),
-        std::bind(&TestHsm::state1b_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state1b_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state1b_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state1b_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state1b_exit>(*this),
         &state1
       ),
       state1C(
         "State1C",
-        std::bind(&TestHsm::state1c_entry, this),
-        std::bind(&TestHsm::state1c_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state1c_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state1c_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state1c_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state1c_exit>(*this),
         &state1
       ),
       state2(
         "State2",
-        std::bind(&TestHsm::state2_entry, this),
-        std::bind(&TestHsm::state2_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state2_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state2_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state2_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state2_exit>(*this),
         nullptr
       ),
       state3(
         "State3",
-        std::bind(&TestHsm::state3_entry, this),
-        std::bind(&TestHsm::state3_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state3_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state3_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state3_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state3_exit>(*this),
         nullptr
       ),
       state4(
         "State4",
-        std::bind(&TestHsm::state4_entry, this),
-        std::bind(&TestHsm::state4_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state4_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state4_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state4_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state4_exit>(*this),
         nullptr
       ),
       state4A(
         "State4A",
-        std::bind(&TestHsm::state4a_entry, this),
-        std::bind(&TestHsm::state4a_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state4a_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state4a_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state4a_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state4a_exit>(*this),
         &state4
       ),
       state5(
         "State5",
-        std::bind(&TestHsm::state5_entry, this),
-        std::bind(&TestHsm::state5_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state5_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state5_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state5_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state5_exit>(*this),
         nullptr
       ),
       state5A(
         "State5A",
-        std::bind(&TestHsm::state5a_entry, this),
-        std::bind(&TestHsm::state5a_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state5a_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state5a_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state5a_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state5a_exit>(*this),
         &state5
       ),
       state5A1(
         "State5A1",
-        std::bind(&TestHsm::state5a1_entry, this),
-        std::bind(&TestHsm::state5a1_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state5a1_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state5a1_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state5a1_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state5a1_exit>(*this),
         &state5A
       ),
       state6(
         "State6",
-        std::bind(&TestHsm::state6_entry, this),
-        std::bind(&TestHsm::state6_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state6_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state6_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state6_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state6_exit>(*this),
         nullptr
       ),
       state6A(
         "State6A",
-        std::bind(&TestHsm::state6a_entry, this),
-        std::bind(&TestHsm::state6a_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state6a_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state6a_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state6a_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state6a_exit>(*this),
         &state6
       ),
       state7(
         "State7",
-        std::bind(&TestHsm::state7_entry, this),
-        std::bind(&TestHsm::state7_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state7_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state7_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state7_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state7_exit>(*this),
         nullptr
       ),
       state8(
         "State8",
-        std::bind(&TestHsm::state8_entry, this),
-        std::bind(&TestHsm::state8_event, this, std::placeholders::_1),
-        std::bind(&TestHsm::state8_exit, this),
+        State<Event>::EntryDelegate::create<TestHsm, &TestHsm::state8_entry>(*this),
+        State<Event>::EventDelegate::create<TestHsm, &TestHsm::state8_event>(*this),
+        State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state8_exit>(*this),
         nullptr
       ) {}
 
