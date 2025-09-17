@@ -86,9 +86,7 @@ using Generic = std::variant<TimerExpired, ButtonPressed>;
 
 ## Creating A State Machine
 
-Now we have our events defined, we can create a state machine. You need to make your own state machine class which inherits from `NinjaHSM::StateMachine`. This of your class AS A state machine, but the `NinjaHSM::StateMachine` class provides a lot of the boilerplate code for you, including the transition logic.
-
-NOTE: You don't actually need to inherit from `NinjaHSM::StateMachine` if you don't want to. You can just use composition and create a `NinjaHSM::StateMachine` object and call it's methods directly. Inheritance does feel like the more intuitive way though since you have to define all the states and state functions in your class anyway.
+Now we have our events defined, we can create a state machine. You create your own state machine class that uses composition with a `NinjaHSM::StateMachine` object. This approach provides better encapsulation and flexibility compared to inheritance, while the `NinjaHSM::StateMachine` class provides all the boilerplate code for you, including the transition logic. However, you can also inherit from `NinjaHSM::StateMachine` instead if you prefer.
 
 In your class, you will need to create a `NinjaHSM::State` object for each state. These are initilized in the constructor, and take in a human readable name, `entry()`, `event()`, `exit()` functions, and a pointer to the parent state (`nullptr` if it has no parent). Use the pointer to the parent state to create a hierarchical state machine (HSM).
 
@@ -105,9 +103,9 @@ ETL delegates are used to provide class methods as callbacks with guaranteed no 
 ```cpp
 #include <NinjaHSM/NinjaHSM.hpp>
 
-class MyStateMachine : public StateMachine<Events::Generic> {
+class MyStateMachine {
 public:
-    MyStateMachine() : StateMachine(),
+    MyStateMachine() :
     m_state1(
         "State1",
         State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this),
@@ -128,8 +126,17 @@ public:
         State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state2_event>(*this),
         State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state2_exit>(*this),
         nullptr
-      ) {
-        initialTransitionTo(m_state1);
+      ), m_stateMachine() {
+        m_stateMachine.initialTransitionTo(m_state1);
+    }
+
+    // Public interface methods
+    void handleEvent(const Events::Generic& event) {
+        m_stateMachine.handleEvent(event);
+    }
+
+    const State<Events::Generic>* getCurrentState() {
+        return m_stateMachine.getCurrentState();
     }
 
 private:
@@ -141,13 +148,13 @@ private:
     void state1_event(Events::Generic const & event) {
         if (std::holds_alternative<Events::TimerExpired>(event)) {
             // Let's go to a different state!
-            transitionTo(m_state1a);
+            m_stateMachine.transitionTo(m_state1a);
         }
         else if (std::holds_alternative<Events::ButtonPressed>(event)) {
             // We know which event we got, so we can safely access the union member
             Events::ButtonPressed const & buttonPressed = std::get<Events::ButtonPressed>(event);
             printf("Got event with data: %d\n", buttonPressed.buttonId);
-            eventHandled(); // Prevents event from bubbling up to parent states
+            m_stateMachine.eventHandled(); // Prevents event from bubbling up to parent states
         }
     }
     void state1_exit() {}
@@ -175,18 +182,24 @@ private:
     State<Events::Generic> m_state1;
     State<Events::Generic> m_state1a;
     State<Events::Generic> m_state2;
+
+    // State machine instance
+    StateMachine<Events::Generic> m_stateMachine;
 };
 ```
 
-Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event).
+Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event). Also notice how we call methods on the `m_stateMachine` member to interact with the state machine.
 
-Inheriting from `StateMachine` gives you the following methods available on your state machine class:
+The public interface methods we created delegate to the internal `StateMachine` object:
 
-* `initialTransitionTo(State& state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
-* `handleEvent(const Event& event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use the below in our `main()` function.
-* `transitionTo(State& state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
-* `State* getCurrentState()`: Gets the current state. May be `nullptr` if the state machine has not been initialized yet.
-* `eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states.
+* `handleEvent(const Event& event)`: Pass an event to the state machine. The state machine will call then current state's `onEvent()` function. This is designed to be called from outside your state machine, and is how you pass events (and data) to the state machine. We use this in our `main()` function below.
+* `getCurrentState()`: Gets the current state. May be `nullptr` if the state machine has not been initialized yet.
+
+Within state methods, you call methods directly on the `m_stateMachine` member:
+
+* `m_stateMachine.initialTransitionTo(State& state)`: Perform an initial transition to the provided state. Designed to be called from the constructor of your state machine class. We used that above in the constructor of `MyStateMachine`.
+* `m_stateMachine.transitionTo(State& state)`: Call this to transition to the provided state. This is designed to be called from within a state's `onEvent()` method (or in rarer cases, from within a state's `entry()` or `exit()` methods --- see below for more details). The transition is NOT queued, it happens immediately. When `transitionTo()` returns, the transition has completed.
+* `m_stateMachine.eventHandled()`: Call this from within a state's `onEvent()` method when you have handled an event. This prevents the event from bubbling up to parent states. You do not need to call this if you transition to a different state, as the transition will automatically stop event bubbling.
 
 Now we can create an instance of our state machine and start sending events to it:
 

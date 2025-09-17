@@ -45,7 +45,7 @@ public:
   };
 };
 
-class TestHsm : public StateMachine<Event> {
+class TestHsm {
 public:
     TestHsm() :
       state1(
@@ -152,7 +152,7 @@ public:
         State<Event>::EventDelegate::create<TestHsm, &TestHsm::state8_event>(*this),
         State<Event>::ExitDelegate::create<TestHsm, &TestHsm::state8_exit>(*this),
         nullptr
-      ) {}
+      ), m_stateMachine() {}
 
     State<Event> state1;
     State<Event> state1A;
@@ -250,7 +250,30 @@ public:
     uint32_t state8ExitCallCount = 0;
     uint32_t state8ReEntryCallCount = 0;
 
+    // Public interface methods
+    void initialTransitionTo(State<Event>& state) {
+        m_stateMachine.initialTransitionTo(state);
+    }
+
+    void handleEvent(const Event& event) {
+        m_stateMachine.handleEvent(event);
+    }
+
+    const State<Event>* getCurrentState() {
+        return m_stateMachine.getCurrentState();
+    }
+
+    void eventHandled() {
+        m_stateMachine.eventHandled();
+    }
+
+    void transitionTo(State<Event>& state) {
+        m_stateMachine.transitionTo(state);
+    }
+
 private:
+    // State machine instance
+    StateMachine<Event> m_stateMachine;
 
     //========================================================================//
     // state1
@@ -265,31 +288,31 @@ private:
         std::cout << "state1_event" << std::endl;
 
         if (event.id == EventId::GO_TO_STATE_1) {
-            transitionTo(state1);
+            m_stateMachine.transitionTo(state1);
         }
         else if (event.id == EventId::GO_TO_STATE_1A) {
-            transitionTo(state1A);
+            m_stateMachine.transitionTo(state1A);
         }
         else if (event.id == EventId::GO_TO_STATE_1B) {
-            transitionTo(state1B);
+            m_stateMachine.transitionTo(state1B);
         }
         else if (event.id == EventId::GO_TO_STATE_3) {
-            transitionTo(state3);
+            m_stateMachine.transitionTo(state3);
         }
         else if (event.id == EventId::GO_TO_STATE_4) {
-            transitionTo(state4);
+            m_stateMachine.transitionTo(state4);
         }
         else if (event.id == EventId::GO_TO_STATE_5) {
-            transitionTo(state5);
+            m_stateMachine.transitionTo(state5);
         }
         else if (event.id == EventId::GO_TO_STATE_6) {
-            transitionTo(state6);
+            m_stateMachine.transitionTo(state6);
         }
         else if (event.id == EventId::GO_TO_STATE_7) {
-            transitionTo(state7);
+            m_stateMachine.transitionTo(state7);
         }
         else if (event.id == EventId::GO_TO_STATE_8) {
-            transitionTo(state8);
+            m_stateMachine.transitionTo(state8);
         }
         state1EventCallCount++;
     }
@@ -312,10 +335,10 @@ private:
         std::cout << "state1a_event" << std::endl;
 
         if (event.id == EventId::GO_TO_STATE_2) {
-            transitionTo(state2);
+            m_stateMachine.transitionTo(state2);
         }
         else if (event.id == EventId::EVERYONE_HANDLES_THIS) {
-            eventHandled();
+            m_stateMachine.eventHandled();
         }
         state1aEventCallCount++;
     }
@@ -333,7 +356,7 @@ private:
         std::cout << __PRETTY_FUNCTION__ << " called." << std::endl;
         state1bEntryCallCount++;
         // Go directly to state1C
-        transitionTo(state1C);
+        m_stateMachine.transitionTo(state1C);
     }
 
     virtual void state1b_event(const Event& event) {
@@ -392,7 +415,7 @@ private:
         std::cout << "state3_entry" << std::endl;
         state3EntryCallCount++;
         // We have a state guard here that always transitions to state1
-        transitionTo(state1);
+        m_stateMachine.transitionTo(state1);
     }
 
     virtual void state3_event(const Event& event) {
@@ -413,7 +436,7 @@ private:
         std::cout << "state4_entry" << std::endl;
         state4EntryCallCount++;
         // Go directly to state4A, a child state
-        transitionTo(state4A);
+        m_stateMachine.transitionTo(state4A);
     }
 
     virtual void state4_event(const Event& event) {
@@ -452,7 +475,7 @@ private:
     virtual void state5_entry() {
         std::cout << "state5_entry" << std::endl;
         state5EntryCallCount++;
-        transitionTo(state5A);
+        m_stateMachine.transitionTo(state5A);
     }
 
     virtual void state5_event(const Event& event) {
@@ -472,7 +495,7 @@ private:
     virtual void state5a_entry() {
         std::cout << "state5a_entry" << std::endl;
         state5aEntryCallCount++;
-        transitionTo(state5A1);
+        m_stateMachine.transitionTo(state5A1);
     }
 
     virtual void state5a_event(const Event& event) {
@@ -492,7 +515,7 @@ private:
     virtual void state5a1_entry() {
         std::cout << "state5a1_entry" << std::endl;
         state5a1EntryCallCount++;
-        transitionTo(state1);
+        m_stateMachine.transitionTo(state1);
     }
 
     virtual void state5a1_event(const Event& event) {
@@ -519,14 +542,14 @@ private:
         state6EventCallCount++;
 
         if (event.id == EventId::GO_TO_STATE_1) {
-            transitionTo(state1);
+            m_stateMachine.transitionTo(state1);
         }
     }
 
     virtual void state6_exit() {
         std::cout << "state6_exit" << std::endl;
         state6ExitCallCount++;
-        transitionTo(state6A);
+        m_stateMachine.transitionTo(state6A);
     }
 
     //========================================================================//
@@ -561,7 +584,7 @@ private:
         std::cout << "state7_event" << std::endl;
         state7EventCallCount++;
         if (event.id == EventId::GO_TO_STATE_1) {
-            transitionTo(state1);
+            m_stateMachine.transitionTo(state1);
         }
     }
 
@@ -569,7 +592,7 @@ private:
         std::cout << "state7_exit" << std::endl;
         state7ExitCallCount++;
         // Override transition and go to state2 instead
-        transitionTo(state2);
+        m_stateMachine.transitionTo(state2);
     }
 
     //========================================================================//
@@ -584,7 +607,7 @@ private:
         // upon entry (i.e. 2x entry and 1x exit calls).
         if (state8ReEntryCallCount == 0) {
             state8ReEntryCallCount++;
-            transitionTo(state8);
+            m_stateMachine.transitionTo(state8);
         }
     }
 
