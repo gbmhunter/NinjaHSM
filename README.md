@@ -9,13 +9,19 @@ NinjaHSM is a small, simple **hierarchical state machine** (HSM) library written
 
 ```mermaid
 stateDiagram-v2
-    [*] --> State1
-    state State1 {
-        [*] --> State1a
+    direction LR
+    [*] --> Active
+    state Active {
+        direction LR
+        [*] --> Sampling
+        Sampling --> Processing : bufferFull
+        Processing --> Sampling : done
     }
-    State1 --> State2 : event
-    State2 --> State1 : event
+    Active --> Sleep : idleTimeout
+    Sleep --> Active : wakeInterrupt
 ```
+
+*Example: a low-power sensor node. While `Active` it alternates between `Sampling` and `Processing`; on an idle timeout it drops to `Sleep`, and a wake interrupt brings it back. `Sampling` and `Processing` are child states of `Active`, so any event they don't handle bubbles up to `Active`.*
 
 ## Features
 
