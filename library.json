@@ -1,0 +1,31 @@
+{
+  "name": "NinjaHSM",
+  "version": "1.3.0",
+  "description": "A small, simple hierarchical state machine (HSM) library for C++ embedded systems. Header-only, no dynamic memory allocation (uses ETL delegates), with event bubbling, entry/exit guards, and optional transition/error observers.",
+  "keywords": "state-machine, hsm, statechart, embedded, fsm, hierarchical, etl",
+  "homepage": "https://github.com/gbmhunter/NinjaHSM",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gbmhunter/NinjaHSM.git"
+  },
+  "authors": [
+    {
+      "name": "Geoffrey Hunter",
+      "url": "https://github.com/gbmhunter"
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "*",
+  "platforms": "*",
+  "headers": "NinjaHSM/NinjaHSM.hpp",
+  "dependencies": [
+    {
+      "owner": "etlcpp",
+      "name": "Embedded Template Library",
+      "version": "^20.39.4"
+    }
+  ],
+  "build": {
+    "includeDir": "src"
+  }
+}

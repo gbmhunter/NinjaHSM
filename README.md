@@ -56,6 +56,8 @@ NinjaHSM's niche: a true hierarchical state machine that stays small and readabl
 
 ## Installation
 
+### CMake (FetchContent)
+
 If you are using CMake, you can add NinjaHSM to your project by using `FetchContent` in your `CMakeLists.txt` file like so:
 
 ```cmake
@@ -71,13 +73,28 @@ FetchContent_MakeAvailable(NinjaHSM)
 target_link_libraries(your_app PRIVATE NinjaHSM)
 ```
 
-Then all you need to do is include the NinjaHSM header in your source files and begin using it (see the Usage section below for more details):
+If you want to see `FetchContent` in action, see the `examples/basic_example/` CMake project.
 
-```cpp
-#include "NinjaHSM/NinjaHSM.hpp"
+### PlatformIO
+
+Add NinjaHSM to your project's `platformio.ini`. Its dependency on ETL is resolved automatically.
+
+```ini
+lib_deps =
+    https://github.com/gbmhunter/NinjaHSM.git#v1.3.0
 ```
 
-If you want to see `FetchContent` in action, see the `examples/basic_example/` CMake project.
+### Arduino
+
+The library follows the Arduino library layout (headers under `src/`), so you can install it by cloning (or downloading a release ZIP into `Sketch > Include Library > Add .ZIP Library...`) into your `libraries/` folder. You will also need to install the **Embedded Template Library (ETL)** dependency via the Library Manager.
+
+### Including the header
+
+However you installed it, include the umbrella header and you're ready to go (see the Usage section below):
+
+```cpp
+#include <NinjaHSM/NinjaHSM.hpp>
+```
 
 ## Usage
 

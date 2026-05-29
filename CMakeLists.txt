@@ -20,10 +20,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(etl)
 
-include_directories(include)
 add_library(NinjaHSM INTERFACE)
-target_include_directories(NinjaHSM INTERFACE include)
+# Headers live under src/ (src/NinjaHSM/*.hpp) so the same layout works for CMake, PlatformIO
+# and the Arduino IDE (which only compiles/exposes headers from a library's src/ directory).
+target_include_directories(NinjaHSM INTERFACE src)
 target_link_libraries(NinjaHSM INTERFACE etl::etl)
+
+# Builds a minimal translation unit that instantiates the public API, without GoogleTest. Used by
+# CI to verify the headers compile for embedded targets (cross-compiled ARM, exceptions/RTTI off).
+# Built as a STATIC library so cross builds do not need a runtime/syscalls to link.
+option(NINJAHSM_BUILD_COMPILE_CHECK "Build the headers-compile sanity check" OFF)
+if(NINJAHSM_BUILD_COMPILE_CHECK)
+    add_library(ninjahsm_compile_check STATIC test/compile_check.cpp)
+    target_link_libraries(ninjahsm_compile_check PRIVATE NinjaHSM)
+endif()
 
 if(NINJAHSM_BUILD_TESTS)
     FetchContent_Declare(
