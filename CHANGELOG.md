@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-n/a
+### Added
+
+- Added the `makeState()` helper for constructing `State` objects with much less boilerplate (you name the event type once and each handler method once, instead of writing out the three ETL delegate `::create<>` expressions by hand).
+
+### Changed
+
+- Updated the example and README to construct states using `makeState()`.
+- Changed the basic example to build against the in-repo NinjaHSM source (`add_subdirectory`) instead of a published release tag, so CI exercises the current source.
+
+### Removed
+
+- Removed the unused `<functional>` include from `NinjaHSM.hpp` (left over from the pre-ETL-delegate days).
 
 ## [1.2.0] - 2025-09-17
 

@@ -98,7 +98,7 @@ State1
 State2
 ```
 
-ETL delegates are used to provide class methods as callbacks with guaranteed no dynamic memory allocation (as opposed to `std::function` with `std::bind` or lambdas), making it ideal for embedded systems. Here is the C++ code:
+ETL delegates are used to provide class methods as callbacks with guaranteed no dynamic memory allocation (as opposed to `std::function` with `std::bind` or lambdas), making it ideal for embedded systems. The `makeState()` helper builds each `State` from your handler methods without you having to spell out the three `::create<>` delegate expressions by hand --- you name the event type once, and each handler method exactly once (so IDE "go to definition" and grep still work, unlike a macro). Here is the C++ code:
 
 ```cpp
 #include <NinjaHSM/NinjaHSM.hpp>
@@ -106,27 +106,19 @@ ETL delegates are used to provide class methods as callbacks with guaranteed no 
 class MyStateMachine {
 public:
     MyStateMachine() :
-    m_state1(
-        "State1",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1_exit>(*this),
-        nullptr
-      ),
-      m_state1a(
-        "State1a",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1a_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1a_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1a_exit>(*this),
-        &m_state1 // NOTE: This makes State1a a child of State1
-      ),
-      m_state2(
-        "State2",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state2_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state2_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state2_exit>(*this),
-        nullptr
-      ), m_stateMachine() {
+    m_state1(makeState<Events::Generic,
+        &MyStateMachine::state1_entry,
+        &MyStateMachine::state1_event,
+        &MyStateMachine::state1_exit>("State1", *this)),
+    m_state1a(makeState<Events::Generic,
+        &MyStateMachine::state1a_entry,
+        &MyStateMachine::state1a_event,
+        &MyStateMachine::state1a_exit>("State1a", *this, &m_state1)), // NOTE: &m_state1 makes State1a a child of State1
+    m_state2(makeState<Events::Generic,
+        &MyStateMachine::state2_entry,
+        &MyStateMachine::state2_event,
+        &MyStateMachine::state2_exit>("State2", *this)),
+    m_stateMachine() {
         m_stateMachine.initialTransitionTo(m_state1);
     }
 
@@ -187,6 +179,10 @@ private:
     StateMachine<Events::Generic> m_stateMachine;
 };
 ```
+
+`makeState()` takes the event type and the three handler member-function pointers as template arguments, followed by `(name, instance, parent)`. The `parent` argument defaults to `nullptr`, so top-level states can omit it. The owning class type is deduced from the `instance` argument.
+
+If you prefer, you can still construct `State` objects directly with the underlying delegates (`State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this)`, etc.) --- `makeState()` is simply a thin wrapper around that.
 
 Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event). Also notice how we call methods on the `m_stateMachine` member to interact with the state machine.
 

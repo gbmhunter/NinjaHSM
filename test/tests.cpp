@@ -933,3 +933,85 @@ TEST(HsmTests, CanTransitionToSelfFromEntry) {
     EXPECT_EQ(hsm.state8EntryCallCount, 2);
     EXPECT_EQ(hsm.state8ExitCallCount, 1);
 }
+
+//============================================================================================//
+// makeState() helper
+//============================================================================================//
+
+/**
+ * A minimal HSM whose states are constructed with the makeState() helper instead of spelling
+ * out the ETL delegate ::create<> expressions by hand. Used to verify the helper produces a
+ * State that wires up entry/event/exit/parent identically to the verbose form.
+ */
+class MakeStateHsm {
+public:
+    MakeStateHsm() :
+      parent(makeState<Event,
+        &MakeStateHsm::parent_entry,
+        &MakeStateHsm::parent_event,
+        &MakeStateHsm::parent_exit>("Parent", *this)),
+      child(makeState<Event,
+        &MakeStateHsm::child_entry,
+        &MakeStateHsm::child_event,
+        &MakeStateHsm::child_exit>("Child", *this, &parent)),
+      m_stateMachine() {}
+
+    void initialTransitionTo(State<Event>& state) { m_stateMachine.initialTransitionTo(state); }
+    void handleEvent(const Event& event) { m_stateMachine.handleEvent(event); }
+    const State<Event>* getCurrentState() { return m_stateMachine.getCurrentState(); }
+
+    void parent_entry() { parentEntryCallCount++; }
+    void parent_event(const Event& event) {
+        if (event.id == EventId::GO_TO_STATE_1A) {
+            m_stateMachine.transitionTo(child);
+        }
+        parentEventCallCount++;
+    }
+    void parent_exit() { parentExitCallCount++; }
+
+    void child_entry() { childEntryCallCount++; }
+    void child_event(const Event& event) { childEventCallCount++; }
+    void child_exit() { childExitCallCount++; }
+
+    State<Event> parent;
+    State<Event> child;
+    StateMachine<Event> m_stateMachine;
+
+    uint32_t parentEntryCallCount = 0;
+    uint32_t parentEventCallCount = 0;
+    uint32_t parentExitCallCount = 0;
+    uint32_t childEntryCallCount = 0;
+    uint32_t childEventCallCount = 0;
+    uint32_t childExitCallCount = 0;
+};
+
+TEST(MakeStateTests, BuildsUsableStates) {
+    MakeStateHsm hsm;
+
+    // Names and parent pointer should be wired up by makeState().
+    EXPECT_STREQ(hsm.parent.name, "Parent");
+    EXPECT_STREQ(hsm.child.name, "Child");
+    EXPECT_EQ(hsm.parent.parent, nullptr);
+    EXPECT_EQ(hsm.child.parent, &hsm.parent);
+
+    hsm.initialTransitionTo(hsm.parent);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.parent);
+    EXPECT_EQ(hsm.parentEntryCallCount, 1);
+
+    // The event handler delegate should fire and trigger the transition to the child state.
+    {
+        Event event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.child);
+    EXPECT_EQ(hsm.parentEventCallCount, 1);
+    EXPECT_EQ(hsm.childEntryCallCount, 1);
+
+    // Unhandled-by-child events should bubble to the parent's event handler.
+    {
+        Event event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.childEventCallCount, 1);
+    EXPECT_EQ(hsm.parentEventCallCount, 2);
+}
