@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `makeState()` helper for constructing `State` objects with much less boilerplate (you name the event type once and each handler method once, instead of writing out the three ETL delegate `::create<>` expressions by hand).
 - Added three optional observer hooks to `StateMachine`: `setTransitionObserver()` (notified after every state `entry()`/`exit()`), `setUnhandledEventObserver()` (notified when an event bubbles past the top of the hierarchy unhandled), and `setErrorObserver()` (notified on internal errors such as exceeding the max transition recursion depth, which previously failed silently). All are ETL delegates, unset by default, and have zero cost when unset.
 - Added a PlatformIO manifest (`library.json`) and an Arduino manifest (`library.properties`) so NinjaHSM can be consumed from those ecosystems.
+- Added a Conan recipe (`conanfile.py`) with a `test_package`, so NinjaHSM can be consumed via Conan. The ETL dependency is pulled in transitively. A CI job validates the recipe with `conan create`.
 - Added CI jobs that cross-compile the headers for a bare-metal ARM Cortex-M target (`arm-none-eabi`) and that compile them with C++ exceptions and RTTI disabled, plus a `NINJAHSM_BUILD_COMPILE_CHECK` CMake option and an `arm-none-eabi` toolchain file under `cmake/`.
 
 ### Changed

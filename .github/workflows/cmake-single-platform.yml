@@ -70,4 +70,24 @@ jobs:
     - name: Compile (strict)
       run: cmake --build ${{github.workspace}}/build-strict
 
+  # Validate the Conan recipe end-to-end: build the package and consume it via test_package.
+  conan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install Conan
+      run: pip install "conan>=2.0"
+
+    - name: Detect profile
+      run: conan profile detect --force
+
+    - name: Create package (builds and runs test_package)
+      run: conan create . --build=missing
+
 
