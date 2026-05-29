@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-n/a
+### Changed
+
+- Made `StateMachine::getCurrentState()` `const` so it can be called on a `const StateMachine&` (it already returned a `const` pointer).
+- Renamed the internal recursion-tracking members `m_maxRecursionCount`/`ourRecursionCount` to `m_recursionDepth`/`ourRecursionDepth`, since they track the current recursion depth rather than a maximum (the maximum is the `MAX_RECURSION_COUNT` constant).
+
+### Fixed
+
+- Corrected stale doc comments in `StateMachine.hpp` that referred to a non-existent `onEvent()` handler (the handler is `event()`), plus a typo in the `handleEvent()` description.
+
+### Removed
+
+- Removed dead commented-out `std::cout` debug code from `transitionTo()`.
 
 ## [1.3.0] - 2026-05-29
 
