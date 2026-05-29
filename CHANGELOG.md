@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated the example and README to construct states using `makeState()`.
+- Changed the basic example to build against the in-repo NinjaHSM source (`add_subdirectory`) instead of a published release tag, so CI exercises the current source.
 
 ### Removed
 
