@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+n/a
+
+## [1.3.0] - 2026-05-29
+
 ### Added
 
 - Added the `makeState()` helper for constructing `State` objects with much less boilerplate (you name the event type once and each handler method once, instead of writing out the three ETL delegate `::create<>` expressions by hand).
