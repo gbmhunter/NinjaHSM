@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated the example and README to construct states using `makeState()`.
 - Changed the basic example to build against the in-repo NinjaHSM source (`add_subdirectory`) instead of a published release tag, so CI exercises the current source.
+- Reworked the README: added status badges, a statechart diagram, and a comparison table against other C++ state machine libraries. Corrected the C++ standard (C++17), the install snippet (linking the `NinjaHSM` target propagates includes and the ETL dependency), and the max-recursion reference (`MAX_RECURSION_COUNT` in `StateMachine.hpp`).
 
 ### Removed
 

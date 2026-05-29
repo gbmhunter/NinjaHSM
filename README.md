@@ -1,14 +1,31 @@
 # NinjaHSM
 
-NinjaHSM is a simple hierarchical state machine library written in C++ which has been designed to work on embedded systems.
+[![CMake](https://github.com/gbmhunter/NinjaHSM/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/gbmhunter/NinjaHSM/actions/workflows/cmake-single-platform.yml)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Standard: C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
+![Heap: none](https://img.shields.io/badge/heap-none-brightgreen.svg)
+
+NinjaHSM is a small, simple **hierarchical state machine** (HSM) library written in C++ and designed for embedded systems. It is header-only, performs **no dynamic memory allocation**, and has a single dependency ([ETL](https://www.etlcpp.com/)).
+
+```mermaid
+stateDiagram-v2
+    [*] --> State1
+    state State1 {
+        [*] --> State1a
+    }
+    State1 --> State2 : event
+    State2 --> State1 : event
+```
 
 ## Features
 
 ### General
 
 * Easy installation if you use CMake via `FetchContent`.
-* Minimal dependencies: C++14 and ETL (Embedded Template Library).
-* No dynamic memory allocation.
+* Minimal dependencies: C++17 and ETL (Embedded Template Library).
+* No dynamic memory allocation (callbacks use ETL delegates, not `std::function`).
+* `makeState()` helper to declare states without delegate boilerplate.
+* Optional observer hooks for transitions, unhandled events, and errors (great for logging/tracing).
 * Suitable for embedded systems.
 
 ### State Features
@@ -18,6 +35,24 @@ NinjaHSM is a simple hierarchical state machine library written in C++ which has
 * The `event()` method takes a user defined `Event` object as a parameter.
 * Events bubble up to parent states if the child state does not handle the event.
 * Events stop bubbling up if a child state calls `transitionTo()` or `eventHandled()`.
+* `transitionTo()` may be called from within `entry()`/`exit()` methods (e.g. for entry guards).
+
+## How does it compare?
+
+There are several good C++ state machine libraries; which one fits depends on your constraints. This table is a best-effort summary to help you decide --- corrections via issues/PRs are welcome.
+
+| | **NinjaHSM** | [tinyfsm](https://github.com/digint/tinyfsm) | [Boost.SML](https://github.com/boost-ext/sml) | [QP/C++](https://github.com/QuantumLeaps/qpcpp) |
+|---|---|---|---|---|
+| Hierarchical states | ✅ | ❌ (flat FSM) | ✅ (composite) | ✅ |
+| No dynamic allocation | ✅ | ✅ | ✅ | ✅ |
+| Header-only | ✅ | ✅ | ✅ | ❌ (framework) |
+| Dependencies | ETL | none | none | none (full framework) |
+| Event bubbling to parents | ✅ | n/a | ✅ | ✅ |
+| Transition / error observers | ✅ | ❌ | logging hooks | ✅ |
+| License | MIT | MIT | Boost | GPL / commercial |
+| Focus | Small, simple embedded HSM | Minimal flat FSM | Compile-time DSL | Full RTOS framework |
+
+NinjaHSM's niche: a true hierarchical state machine that stays small and readable, allocates nothing, and reads like ordinary C++ (no heavy template DSL) --- while leaning on ETL so it drops cleanly into existing embedded projects.
 
 ## Installation
 
@@ -27,13 +62,13 @@ If you are using CMake, you can add NinjaHSM to your project by using `FetchCont
 include(FetchContent)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v1.0.1 # This can be a hash, tag or branch.
+    GIT_TAG v1.3.0 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
 
-# Then later once you've defined your target
-target_link_libraries(your_app PRIVATE NinjaHsm)
-target_include_directories(your_app PRIVATE ${NinjaHSM_SOURCE_DIR}/include)
+# Then later once you've defined your target. Linking against the NinjaHSM target also
+# propagates its include directory and its ETL dependency, so nothing else is needed.
+target_link_libraries(your_app PRIVATE NinjaHSM)
 ```
 
 Then all you need to do is include the NinjaHSM header in your source files and begin using it (see the Usage section below for more details):
@@ -261,7 +296,7 @@ Because `entry()` and `exit()` states are only every called by `transitionTo()` 
 * If `stateA` calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS NOT a child of `stateA`, then NinjaHSM asummes `stateA` was exited succesfully, and does not call `stateA`'s `exit()` method again.
 * If `stateA` calls `transitionTo(stateB)` from within it's `exit()` method, AND `stateB` IS a child of `stateA`, then NinjaHSM asummes `stateA` was not exited, and does not call `stateA`'s `entry()` method again.
 
-Hopefully these rules make intuitive sense! There is also a max. recursion depth of 50 (set by `MAX_RECURSION_DEPTH` in `NinjaHSM.hpp`) to prevent infinite recursion in the case of bugs (e.g. if you unconditionally call `transitionTo(stateB)` in `stateA`'s `entry()` method, and unconditionally call `transitionTo(stateA)` in `stateB`'s `entry()` method).
+Hopefully these rules make intuitive sense! There is also a max. recursion depth of 50 (set by `MAX_RECURSION_COUNT` in `StateMachine.hpp`) to prevent infinite recursion in the case of bugs (e.g. if you unconditionally call `transitionTo(stateB)` in `stateA`'s `entry()` method, and unconditionally call `transitionTo(stateA)` in `stateB`'s `entry()` method). When this limit is hit the transition is abandoned; you can be notified of it via the error observer (see below).
 
 ### Observers (Logging, Tracing and Error Handling)
 
@@ -319,8 +354,8 @@ include(FetchContent)
 set(NINJAHSM_BUILD_TESTS ON CACHE BOOL "" FORCE)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v1.0.1 # This can be a hash, tag or branch.
+    GIT_TAG v1.3.0 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
-target_link_libraries(your_app NinjaHsm)
+target_link_libraries(your_app NinjaHSM)
 ```
