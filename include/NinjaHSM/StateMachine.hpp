@@ -14,10 +14,81 @@ namespace NinjaHSM {
  */
 constexpr uint32_t MAX_RECURSION_COUNT = 50;
 
+/**
+ * Describes whether a state is being entered or exited. Passed to a transition observer
+ * (see StateMachine::setTransitionObserver()).
+ */
+enum class TransitionAction {
+    Entry,
+    Exit,
+};
+
+/**
+ * Errors the state machine can report to an error observer (see StateMachine::setErrorObserver()).
+ */
+enum class Error {
+    /**
+     * transitionTo() recursed deeper than MAX_RECURSION_COUNT (almost always an unconditional
+     * transitionTo() in an entry()/exit() method). The transition is abandoned and the state
+     * machine may be left in an indeterminate state.
+     */
+    MaxRecursionDepthExceeded,
+};
+
 template <typename EventType>
 class StateMachine {
 public:
+    /**
+     * Observer called immediately after a state's entry() or exit() method runs. Useful for
+     * logging/tracing transitions without having to instrument every state. The first argument
+     * is the state that was entered/exited, the second whether it was an entry or an exit.
+     */
+    using TransitionObserver = etl::delegate<void(const State<EventType>&, TransitionAction)>;
+
+    /**
+     * Observer called when an event is not handled by the current state or any of its parents
+     * (i.e. it bubbled past the top of the hierarchy without any state calling transitionTo()
+     * or eventHandled()).
+     */
+    using UnhandledEventObserver = etl::delegate<void(const EventType&)>;
+
+    /**
+     * Observer called when the state machine encounters an internal error (see Error).
+     */
+    using ErrorObserver = etl::delegate<void(Error)>;
+
     StateMachine() {}
+
+    /**
+     * Set an observer to be notified each time a state is entered or exited. Pass a default
+     * constructed (unbound) delegate to remove a previously set observer. When no observer is
+     * set there is zero runtime cost beyond a single is_valid() check per entry/exit.
+     *
+     * @param[in] observer The observer to call, or an unbound delegate to clear.
+     */
+    void setTransitionObserver(TransitionObserver observer) {
+        m_transitionObserver = observer;
+    }
+
+    /**
+     * Set an observer to be notified when an event bubbles past the top of the state hierarchy
+     * without being handled. Pass a default constructed (unbound) delegate to clear.
+     *
+     * @param[in] observer The observer to call, or an unbound delegate to clear.
+     */
+    void setUnhandledEventObserver(UnhandledEventObserver observer) {
+        m_unhandledEventObserver = observer;
+    }
+
+    /**
+     * Set an observer to be notified when the state machine encounters an internal error.
+     * Pass a default constructed (unbound) delegate to clear.
+     *
+     * @param[in] observer The observer to call, or an unbound delegate to clear.
+     */
+    void setErrorObserver(ErrorObserver observer) {
+        m_errorObserver = observer;
+    }
 
     /**
      * Perform the transition to the provided initial state. This function should be called before
@@ -49,6 +120,11 @@ public:
             }
             stateToHandleEvent = stateToHandleEvent->parent;
         }
+        // If no state transitioned or claimed the event, it bubbled past the top of the
+        // hierarchy unhandled. Let any observer know.
+        if (!m_transitionToCalled && !m_eventHandledCalled && m_unhandledEventObserver.is_valid()) {
+            m_unhandledEventObserver(event);
+        }
     }
 
     /**
@@ -69,6 +145,9 @@ public:
         m_transitionToCalled = true;
         m_maxRecursionCount++;
         if (m_maxRecursionCount > MAX_RECURSION_COUNT) {
+            if (m_errorObserver.is_valid()) {
+                m_errorObserver(Error::MaxRecursionDepthExceeded);
+            }
             return;
         }
         uint32_t ourRecursionCount = m_maxRecursionCount;
@@ -89,7 +168,7 @@ public:
         }
 
         if (m_currentState == destinationState) {
-            m_currentState->exit();
+            exitState(m_currentState);
             if (ourRecursionCount != m_maxRecursionCount) {
                 goto END;
             }
@@ -121,7 +200,7 @@ public:
                 // We've found the current state in the destination branch.
                 // Move down one state.
                 m_calledEntryState = stateInDestinationBranch;
-                stateInDestinationBranch->entry();
+                enterState(stateInDestinationBranch);
                 m_calledEntryState = nullptr;
                 if (ourRecursionCount != m_maxRecursionCount) {
                     break;
@@ -133,7 +212,7 @@ public:
             // If we get here, we need to exit the current state.
             // Transition to the top most parent of the destination state.
             m_calledExitState = m_currentState;
-            m_currentState->exit();
+            exitState(m_currentState);
             m_calledExitState = nullptr; // Clear flag
             if (ourRecursionCount != m_maxRecursionCount) {
                 break;
@@ -162,6 +241,30 @@ public:
 
 protected:
 
+    /**
+     * Call a state's entry() method and then notify the transition observer (if set).
+     *
+     * @param[in] state The state to enter.
+     */
+    void enterState(const State<EventType>* state) {
+        state->entry();
+        if (m_transitionObserver.is_valid()) {
+            m_transitionObserver(*state, TransitionAction::Entry);
+        }
+    }
+
+    /**
+     * Call a state's exit() method and then notify the transition observer (if set).
+     *
+     * @param[in] state The state to exit.
+     */
+    void exitState(const State<EventType>* state) {
+        state->exit();
+        if (m_transitionObserver.is_valid()) {
+            m_transitionObserver(*state, TransitionAction::Exit);
+        }
+    }
+
     const State<EventType>* m_currentState = nullptr;
 
     bool m_transitionToCalled = false;
@@ -186,6 +289,14 @@ protected:
      * Keeps track of how many times transitionTo() has been called recursively.
      */
     uint32_t m_maxRecursionCount = 0;
+
+    /**
+     * Observers. Default constructed (unbound) until set via the corresponding setter. Unbound
+     * delegates are never called (guarded by is_valid()).
+     */
+    TransitionObserver m_transitionObserver;
+    UnhandledEventObserver m_unhandledEventObserver;
+    ErrorObserver m_errorObserver;
 
     /**
      * Check if a child state is a child of a parent state.

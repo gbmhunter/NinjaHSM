@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the `makeState()` helper for constructing `State` objects with much less boilerplate (you name the event type once and each handler method once, instead of writing out the three ETL delegate `::create<>` expressions by hand).
+- Added three optional observer hooks to `StateMachine`: `setTransitionObserver()` (notified after every state `entry()`/`exit()`), `setUnhandledEventObserver()` (notified when an event bubbles past the top of the hierarchy unhandled), and `setErrorObserver()` (notified on internal errors such as exceeding the max transition recursion depth, which previously failed silently). All are ETL delegates, unset by default, and have zero cost when unset.
 
 ### Changed
 

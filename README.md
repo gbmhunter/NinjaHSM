@@ -263,6 +263,41 @@ Because `entry()` and `exit()` states are only every called by `transitionTo()` 
 
 Hopefully these rules make intuitive sense! There is also a max. recursion depth of 50 (set by `MAX_RECURSION_DEPTH` in `NinjaHSM.hpp`) to prevent infinite recursion in the case of bugs (e.g. if you unconditionally call `transitionTo(stateB)` in `stateA`'s `entry()` method, and unconditionally call `transitionTo(stateA)` in `stateB`'s `entry()` method).
 
+### Observers (Logging, Tracing and Error Handling)
+
+It is often useful to know what the state machine is doing without having to instrument every single `entry()`/`exit()`/`event()` method by hand. NinjaHSM provides three optional observer hooks on the `StateMachine` object. All of them are ETL delegates (no dynamic allocation), are unset by default, and have zero cost beyond a single `is_valid()` check when not set.
+
+* **Transition observer** --- called immediately after any state's `entry()` or `exit()` method runs. Ideal for logging/tracing every transition in one place.
+* **Unhandled event observer** --- called when an event bubbles past the top of the hierarchy without any state calling `transitionTo()` or `eventHandled()`. Useful for catching events you forgot to handle.
+* **Error observer** --- called when the state machine hits an internal error, such as `transitionTo()` recursing deeper than `MAX_RECURSION_COUNT` (which otherwise fails silently).
+
+```cpp
+// Set these up once, e.g. in your state machine class's constructor.
+m_stateMachine.setTransitionObserver(
+    StateMachine<Events::Generic>::TransitionObserver::create<MyStateMachine, &MyStateMachine::onTransition>(*this));
+m_stateMachine.setUnhandledEventObserver(
+    StateMachine<Events::Generic>::UnhandledEventObserver::create<MyStateMachine, &MyStateMachine::onUnhandledEvent>(*this));
+m_stateMachine.setErrorObserver(
+    StateMachine<Events::Generic>::ErrorObserver::create<MyStateMachine, &MyStateMachine::onError>(*this));
+
+// ...
+
+void onTransition(const State<Events::Generic>& state, TransitionAction action) {
+    printf("%s %s\n", action == TransitionAction::Entry ? "Entered" : "Exited", state.name);
+}
+
+void onUnhandledEvent(const Events::Generic& event) {
+    printf("Event was not handled by any state.\n");
+}
+
+void onError(Error error) {
+    // error == Error::MaxRecursionDepthExceeded
+    printf("State machine error!\n");
+}
+```
+
+Pass a default constructed (unbound) delegate to any of the setters to remove a previously set observer.
+
 ### Others
 
 See the `examples/` and `test/` directories for more examples on how to use NinjaHSM.
