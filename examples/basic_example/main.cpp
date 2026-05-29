@@ -41,27 +41,19 @@ using Generic = std::variant<TimerExpired, ButtonPressed>;
 class MyStateMachine {
 public:
     MyStateMachine() :
-    m_state1(
-        "State1",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1_exit>(*this),
-        nullptr
-      ),
-      m_state1a(
-        "State1a",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1a_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state1a_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state1a_exit>(*this),
-        &m_state1
-      ),
-      m_state2(
-        "State2",
-        State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state2_entry>(*this),
-        State<Events::Generic>::EventDelegate::create<MyStateMachine, &MyStateMachine::state2_event>(*this),
-        State<Events::Generic>::ExitDelegate::create<MyStateMachine, &MyStateMachine::state2_exit>(*this),
-        nullptr
-      ), m_stateMachine() {
+    m_state1(makeState<Events::Generic,
+        &MyStateMachine::state1_entry,
+        &MyStateMachine::state1_event,
+        &MyStateMachine::state1_exit>("State1", *this)),
+    m_state1a(makeState<Events::Generic,
+        &MyStateMachine::state1a_entry,
+        &MyStateMachine::state1a_event,
+        &MyStateMachine::state1a_exit>("State1a", *this, &m_state1)), // NOTE: &m_state1 makes State1a a child of State1
+    m_state2(makeState<Events::Generic,
+        &MyStateMachine::state2_entry,
+        &MyStateMachine::state2_event,
+        &MyStateMachine::state2_exit>("State2", *this)),
+    m_stateMachine() {
         m_stateMachine.initialTransitionTo(m_state1);
     }
 
