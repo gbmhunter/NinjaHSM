@@ -94,6 +94,31 @@ lib_deps =
 
 The library follows the Arduino library layout (headers under `src/`), so you can install it by cloning (or downloading a release ZIP into `Sketch > Include Library > Add .ZIP Library...`) into your `libraries/` folder. You will also need to install the **Embedded Template Library (ETL)** dependency via the Library Manager.
 
+### Conan
+
+NinjaHSM ships a [Conan](https://conan.io/) recipe. Add it to your `conanfile.txt`:
+
+```ini
+[requires]
+ninjahsm/1.3.0
+```
+
+or your `conanfile.py`:
+
+```python
+def requirements(self):
+    self.requires("ninjahsm/1.3.0")
+```
+
+Its dependency on ETL is pulled in transitively. In your `CMakeLists.txt`, link the generated target (which also exposes the ETL headers):
+
+```cmake
+find_package(ninjahsm CONFIG REQUIRED)
+target_link_libraries(your_app PRIVATE ninjahsm::ninjahsm)
+```
+
+If NinjaHSM is not yet on a Conan remote you use, you can export the recipe locally from a clone with `conan create .`.
+
 ### Including the header
 
 However you installed it, include the umbrella header and you're ready to go (see the Usage section below):
