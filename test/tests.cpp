@@ -1,3 +1,6 @@
+#include <string>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <gmock/gmock.h>
@@ -1014,4 +1017,146 @@ TEST(MakeStateTests, BuildsUsableStates) {
     }
     EXPECT_EQ(hsm.childEventCallCount, 1);
     EXPECT_EQ(hsm.parentEventCallCount, 2);
+}
+
+//============================================================================================//
+// Observers (transition / unhandled event / error)
+//============================================================================================//
+
+/**
+ * A small HSM used to exercise the observer hooks. Records every entry/exit, every unhandled
+ * event, and every error so the tests can assert on them.
+ *
+ *   Parent
+ *     |-- Child
+ *   LoopA   (entry unconditionally transitions to LoopB)
+ *   LoopB   (entry unconditionally transitions to LoopA)
+ */
+class ObserverHsm {
+public:
+    ObserverHsm() :
+      parent(makeState<Event,
+        &ObserverHsm::parent_entry,
+        &ObserverHsm::parent_event,
+        &ObserverHsm::parent_exit>("Parent", *this)),
+      child(makeState<Event,
+        &ObserverHsm::child_entry,
+        &ObserverHsm::child_event,
+        &ObserverHsm::child_exit>("Child", *this, &parent)),
+      loopA(makeState<Event,
+        &ObserverHsm::loopA_entry,
+        &ObserverHsm::loopA_event,
+        &ObserverHsm::loopA_exit>("LoopA", *this)),
+      loopB(makeState<Event,
+        &ObserverHsm::loopB_entry,
+        &ObserverHsm::loopB_event,
+        &ObserverHsm::loopB_exit>("LoopB", *this)),
+      m_stateMachine() {
+        m_stateMachine.setTransitionObserver(
+            StateMachine<Event>::TransitionObserver::create<ObserverHsm, &ObserverHsm::onTransition>(*this));
+        m_stateMachine.setUnhandledEventObserver(
+            StateMachine<Event>::UnhandledEventObserver::create<ObserverHsm, &ObserverHsm::onUnhandledEvent>(*this));
+        m_stateMachine.setErrorObserver(
+            StateMachine<Event>::ErrorObserver::create<ObserverHsm, &ObserverHsm::onError>(*this));
+    }
+
+    void initialTransitionTo(State<Event>& state) { m_stateMachine.initialTransitionTo(state); }
+    void handleEvent(const Event& event) { m_stateMachine.handleEvent(event); }
+    const State<Event>* getCurrentState() { return m_stateMachine.getCurrentState(); }
+
+    // Observer callbacks.
+    void onTransition(const State<Event>& state, TransitionAction action) {
+        transitions.push_back(std::string(state.name) + (action == TransitionAction::Entry ? ":entry" : ":exit"));
+    }
+    void onUnhandledEvent(const Event& event) { unhandledEventCount++; }
+    void onError(Error error) {
+        errorCount++;
+        lastError = error;
+    }
+
+    // State handlers.
+    void parent_entry() {}
+    void parent_event(const Event& event) {
+        if (event.id == EventId::GO_TO_STATE_1A) {
+            m_stateMachine.transitionTo(child);
+        }
+    }
+    void parent_exit() {}
+
+    void child_entry() {}
+    void child_event(const Event& event) {} // Deliberately handles nothing so events bubble.
+    void child_exit() {}
+
+    void loopA_entry() { m_stateMachine.transitionTo(loopB); }
+    void loopA_event(const Event& event) {}
+    void loopA_exit() {}
+
+    void loopB_entry() { m_stateMachine.transitionTo(loopA); }
+    void loopB_event(const Event& event) {}
+    void loopB_exit() {}
+
+    State<Event> parent;
+    State<Event> child;
+    State<Event> loopA;
+    State<Event> loopB;
+    StateMachine<Event> m_stateMachine;
+
+    std::vector<std::string> transitions;
+    int unhandledEventCount = 0;
+    int errorCount = 0;
+    Error lastError = Error::MaxRecursionDepthExceeded;
+};
+
+TEST(ObserverTests, TransitionObserverFiresOnEntryAndExit) {
+    ObserverHsm hsm;
+
+    hsm.initialTransitionTo(hsm.parent);
+    EXPECT_THAT(hsm.transitions, ::testing::ElementsAre("Parent:entry"));
+
+    // Parent handles the event by transitioning down into its child, so only the child is entered.
+    {
+        Event event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(event);
+    }
+    EXPECT_THAT(hsm.transitions, ::testing::ElementsAre("Parent:entry", "Child:entry"));
+
+    // Child does not handle the event; it bubbles to the parent which transitions to the child
+    // again. Because the destination equals the current state this is a self-transition, exiting
+    // and re-entering the child.
+    {
+        Event event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(event);
+    }
+    EXPECT_THAT(hsm.transitions,
+        ::testing::ElementsAre("Parent:entry", "Child:entry", "Child:exit", "Child:entry"));
+}
+
+TEST(ObserverTests, UnhandledEventObserverFiresOnlyWhenEventBubblesPastTop) {
+    ObserverHsm hsm;
+    hsm.initialTransitionTo(hsm.parent);
+
+    // Nobody handles this event, so it should bubble past the top and notify the observer.
+    {
+        Event event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.unhandledEventCount, 1);
+
+    // This event causes a transition, so it is considered handled and must NOT notify.
+    {
+        Event event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.unhandledEventCount, 1);
+}
+
+TEST(ObserverTests, ErrorObserverFiresOnMaxRecursionDepthExceeded) {
+    ObserverHsm hsm;
+
+    // LoopA's entry transitions to LoopB whose entry transitions back to LoopA, recursing until
+    // the max depth guard trips.
+    hsm.initialTransitionTo(hsm.loopA);
+
+    EXPECT_GE(hsm.errorCount, 1);
+    EXPECT_EQ(hsm.lastError, Error::MaxRecursionDepthExceeded);
 }
