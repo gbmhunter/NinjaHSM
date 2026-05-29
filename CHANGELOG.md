@@ -11,12 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the `makeState()` helper for constructing `State` objects with much less boilerplate (you name the event type once and each handler method once, instead of writing out the three ETL delegate `::create<>` expressions by hand).
 - Added three optional observer hooks to `StateMachine`: `setTransitionObserver()` (notified after every state `entry()`/`exit()`), `setUnhandledEventObserver()` (notified when an event bubbles past the top of the hierarchy unhandled), and `setErrorObserver()` (notified on internal errors such as exceeding the max transition recursion depth, which previously failed silently). All are ETL delegates, unset by default, and have zero cost when unset.
+- Added a PlatformIO manifest (`library.json`) and an Arduino manifest (`library.properties`) so NinjaHSM can be consumed from those ecosystems.
+- Added CI jobs that cross-compile the headers for a bare-metal ARM Cortex-M target (`arm-none-eabi`) and that compile them with C++ exceptions and RTTI disabled, plus a `NINJAHSM_BUILD_COMPILE_CHECK` CMake option and an `arm-none-eabi` toolchain file under `cmake/`.
 
 ### Changed
 
+- **Moved the headers from `include/NinjaHSM/` to `src/NinjaHSM/`** so a single layout works for CMake, PlatformIO and the Arduino IDE (which only compiles headers from a library's `src/` directory). The public include path is unchanged: `#include <NinjaHSM/NinjaHSM.hpp>`.
 - Updated the example and README to construct states using `makeState()`.
 - Changed the basic example to build against the in-repo NinjaHSM source (`add_subdirectory`) instead of a published release tag, so CI exercises the current source.
-- Reworked the README: added status badges, a statechart diagram, and a comparison table against other C++ state machine libraries. Corrected the C++ standard (C++17), the install snippet (linking the `NinjaHSM` target propagates includes and the ETL dependency), and the max-recursion reference (`MAX_RECURSION_COUNT` in `StateMachine.hpp`).
+- Reworked the README: added status badges, a statechart diagram, a comparison table against other C++ state machine libraries, and PlatformIO/Arduino install instructions. Corrected the C++ standard (C++17), the install snippet (linking the `NinjaHSM` target propagates includes and the ETL dependency), and the max-recursion reference (`MAX_RECURSION_COUNT` in `StateMachine.hpp`).
 
 ### Removed
 

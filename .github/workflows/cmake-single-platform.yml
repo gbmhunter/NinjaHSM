@@ -43,4 +43,31 @@ jobs:
       working-directory: ${{github.workspace}}/examples/basic_example
       run: ./build/basic_example
 
+  # Cross-compile the headers for a bare-metal ARM Cortex-M target to prove the embedded claim.
+  cross-compile-arm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install ARM toolchain
+      run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
+
+    - name: Configure (arm-none-eabi)
+      run: cmake -B ${{github.workspace}}/build-arm -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/arm-none-eabi.cmake -DNINJAHSM_BUILD_COMPILE_CHECK=ON
+
+    - name: Compile for ARM
+      run: cmake --build ${{github.workspace}}/build-arm
+
+  # Verify the headers compile with C++ exceptions and RTTI disabled, as embedded builds often do.
+  strict-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure (no exceptions, no RTTI)
+      run: cmake -B ${{github.workspace}}/build-strict -DNINJAHSM_BUILD_COMPILE_CHECK=ON -DCMAKE_CXX_FLAGS="-fno-exceptions -fno-rtti"
+
+    - name: Compile (strict)
+      run: cmake --build ${{github.workspace}}/build-strict
+
 
