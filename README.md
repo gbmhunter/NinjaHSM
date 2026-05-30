@@ -357,6 +357,12 @@ Because `entry()` and `exit()` states are only every called by `transitionTo()` 
 
 Hopefully these rules make intuitive sense! There is also a max. recursion depth of 50 (set by `MAX_RECURSION_COUNT` in `StateMachine.hpp`) to prevent infinite recursion in the case of bugs (e.g. if you unconditionally call `transitionTo(stateB)` in `stateA`'s `entry()` method, and unconditionally call `transitionTo(stateA)` in `stateB`'s `entry()` method). When this limit is hit the transition is abandoned; you can be notified of it via the error observer (see below).
 
+When the limit is hit, the current state is left indeterminate (the transition was abandoned partway). To recover, transition to a known-good state once control returns to your code --- for example from the error observer, or after `handleEvent()` returns. The internal recursion counter is reset automatically once the outermost `transitionTo()` unwinds, so the recovery transition starts cleanly.
+
+### Threading and re-entrancy
+
+`handleEvent()` and `transitionTo()` are **not re-entrant** --- they share internal bookkeeping, so you must not start a new call before the current one returns. In practice this means a single state machine instance should be driven from one context only; do not call `handleEvent()` from one thread (or from an interrupt) while another `handleEvent()`/`transitionTo()` is still in progress. To feed events in from an interrupt, push them onto a queue from the ISR and drain that queue from your main loop. Calling `transitionTo()` or `eventHandled()` from within a state's own `event()`/`entry()`/`exit()` handler is fine --- that is the normal usage and is not re-entrancy.
+
 ### Observers (Logging, Tracing and Error Handling)
 
 It is often useful to know what the state machine is doing without having to instrument every single `entry()`/`exit()`/`event()` method by hand. NinjaHSM provides three optional observer hooks on the `StateMachine` object. All of them are ETL delegates (no dynamic allocation), are unset by default, and have zero cost beyond a single `is_valid()` check when not set.

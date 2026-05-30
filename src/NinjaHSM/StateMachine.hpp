@@ -30,7 +30,12 @@ enum class Error {
     /**
      * transitionTo() recursed deeper than MAX_RECURSION_COUNT (almost always an unconditional
      * transitionTo() in an entry()/exit() method). The transition is abandoned and the state
-     * machine may be left in an indeterminate state.
+     * machine may be left in an indeterminate current state.
+     *
+     * To recover, transition to a known-good state once control returns to your code (e.g. call
+     * initialTransitionTo()/transitionTo() from the error observer or after handleEvent()
+     * returns). The internal recursion counter is reset automatically once the outermost
+     * transitionTo() unwinds, so a subsequent transition starts cleanly.
      */
     MaxRecursionDepthExceeded,
 };
@@ -103,7 +108,13 @@ public:
     /**
      * Provide an event to the state machine. The state machine will call the current state's
      * event() function.
-     * 
+     *
+     * Not re-entrant. handleEvent() and transitionTo() share internal bookkeeping, so you must
+     * not call handleEvent() again before the current call returns (e.g. from another thread or
+     * from an interrupt that fires mid-call). To feed events from an ISR, push them onto a queue
+     * and drain that queue from your main loop. It is fine, however, to call transitionTo() or
+     * eventHandled() from within a state's event() handler --- that is the normal usage.
+     *
      * @param[in] event The event to handle.
      */
     void handleEvent(const EventType& event) {
@@ -143,6 +154,13 @@ public:
 
     /**
      * @brief Trigger a transition to a state.
+     *
+     * Intended to be called from within a state's event()/entry()/exit() handlers, or from your
+     * own code when the state machine is otherwise idle. Not re-entrant with handleEvent() (see
+     * handleEvent()): do not invoke it from a thread or interrupt that could preempt an in-flight
+     * handleEvent()/transitionTo(). Recursive calls from entry()/exit() are supported and bounded
+     * by MAX_RECURSION_COUNT.
+     *
      * @param state The state to transition to.
      */
     void transitionTo(const State<EventType>& state) {
