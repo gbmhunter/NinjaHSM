@@ -7,7 +7,7 @@ from conan.tools.files import copy
 
 class NinjaHSMConan(ConanFile):
     name = "ninjahsm"
-    version = "1.3.0"
+    version = "1.4.0"
     description = (
         "A small, simple hierarchical state machine (HSM) library for C++ embedded systems. "
         "Header-only, no dynamic memory allocation."

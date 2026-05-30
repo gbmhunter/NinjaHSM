@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+n/a
+
+## [1.4.0] - 2026-05-30
+
 ### Added
 
 - `makeState()` now accepts `nullptr` for any of its three handler slots (entry/event/exit), so states no longer need empty stub methods for handlers they do not use. All three slots remain mandatory (positional); a `nullptr` slot leaves that delegate unbound and the state machine skips calling it. A state with no `event()` handler simply lets events bubble up to its parent.
@@ -100,7 +104,9 @@ Initial release.
 - Events stop bubbling up if a child state calls `transitionTo()` or `eventHandled()`.
 - Added a test suite.
 
-[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v1.2.0...HEAD
+[unreleased]: https://github.com/gbmhunter/NinjaHSM/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/gbmhunter/NinjaHSM/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/gbmhunter/NinjaHSM/compare/v0.1.0...v1.0.0

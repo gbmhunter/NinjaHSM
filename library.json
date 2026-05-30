@@ -1,6 +1,6 @@
 {
   "name": "NinjaHSM",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A small, simple hierarchical state machine (HSM) library for C++ embedded systems. Header-only, no dynamic memory allocation (uses ETL delegates), with event bubbling, entry/exit guards, and optional transition/error observers.",
   "keywords": "state-machine, hsm, statechart, embedded, fsm, hierarchical, etl",
   "homepage": "https://github.com/gbmhunter/NinjaHSM",

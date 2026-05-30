@@ -70,7 +70,7 @@ If you are using CMake, you can add NinjaHSM to your project by using `FetchCont
 include(FetchContent)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v1.3.0 # This can be a hash, tag or branch.
+    GIT_TAG v1.4.0 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
 
@@ -87,7 +87,7 @@ Add NinjaHSM to your project's `platformio.ini`. Its dependency on ETL is resolv
 
 ```ini
 lib_deps =
-    https://github.com/gbmhunter/NinjaHSM.git#v1.3.0
+    https://github.com/gbmhunter/NinjaHSM.git#v1.4.0
 ```
 
 ### Arduino
@@ -100,14 +100,14 @@ NinjaHSM ships a [Conan](https://conan.io/) recipe. Add it to your `conanfile.tx
 
 ```ini
 [requires]
-ninjahsm/1.3.0
+ninjahsm/1.4.0
 ```
 
 or your `conanfile.py`:
 
 ```python
 def requirements(self):
-    self.requires("ninjahsm/1.3.0")
+    self.requires("ninjahsm/1.4.0")
 ```
 
 Its dependency on ETL is pulled in transitively. In your `CMakeLists.txt`, link the generated target (which also exposes the ETL headers):
@@ -419,7 +419,7 @@ include(FetchContent)
 set(NINJAHSM_BUILD_TESTS ON CACHE BOOL "" FORCE)
 FetchContent_Declare(NinjaHSM
     GIT_REPOSITORY https://github.com/gbmhunter/NinjaHSM.git
-    GIT_TAG v1.3.0 # This can be a hash, tag or branch.
+    GIT_TAG v1.4.0 # This can be a hash, tag or branch.
 )
 FetchContent_MakeAvailable(NinjaHSM)
 target_link_libraries(your_app NinjaHSM)
