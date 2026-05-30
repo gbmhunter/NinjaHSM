@@ -101,8 +101,8 @@ public:
     }
 
     /**
-     * Provide an event to the state machine. The state machine will call then current state's
-     * onEvent() function.
+     * Provide an event to the state machine. The state machine will call the current state's
+     * event() function.
      * 
      * @param[in] event The event to handle.
      */
@@ -133,7 +133,7 @@ public:
      * 
      * @return A pointer to the current state.
      */
-    const State<EventType>* getCurrentState() {
+    const State<EventType>* getCurrentState() const {
         return m_currentState;
     }
 
@@ -143,14 +143,14 @@ public:
      */
     void transitionTo(const State<EventType>& state) {
         m_transitionToCalled = true;
-        m_maxRecursionCount++;
-        if (m_maxRecursionCount > MAX_RECURSION_COUNT) {
+        m_recursionDepth++;
+        if (m_recursionDepth > MAX_RECURSION_COUNT) {
             if (m_errorObserver.is_valid()) {
                 m_errorObserver(Error::MaxRecursionDepthExceeded);
             }
             return;
         }
-        uint32_t ourRecursionCount = m_maxRecursionCount;
+        uint32_t ourRecursionDepth = m_recursionDepth;
 
         // Rename just for readability below
         const State<EventType>* destinationState = &state;
@@ -169,7 +169,7 @@ public:
 
         if (m_currentState == destinationState) {
             exitState(m_currentState);
-            if (ourRecursionCount != m_maxRecursionCount) {
+            if (ourRecursionDepth != m_recursionDepth) {
                 goto END;
             }
             m_currentState = m_currentState->parent;
@@ -190,10 +190,6 @@ public:
                     break;
                 }
                 stateInDestinationBranch = stateInDestinationBranch->parent;
-                // if (stateInDestinationBranch == nullptr) {
-                //     std::cout << "State in destination branch is null. This should never happen." << std::endl;
-                //     break;
-                // }
             }
 
             if (foundCurrentStateInDestinationBranch) {
@@ -202,7 +198,7 @@ public:
                 m_calledEntryState = stateInDestinationBranch;
                 enterState(stateInDestinationBranch);
                 m_calledEntryState = nullptr;
-                if (ourRecursionCount != m_maxRecursionCount) {
+                if (ourRecursionDepth != m_recursionDepth) {
                     break;
                 }
                 m_currentState = stateInDestinationBranch;
@@ -214,7 +210,7 @@ public:
             m_calledExitState = m_currentState;
             exitState(m_currentState);
             m_calledExitState = nullptr; // Clear flag
-            if (ourRecursionCount != m_maxRecursionCount) {
+            if (ourRecursionDepth != m_recursionDepth) {
                 break;
             }
             m_currentState = m_currentState->parent; // This might be nullptr
@@ -224,16 +220,16 @@ public:
 
         // If we are at the top of the recursion, reset the recursion index so it's
         // ready for the next non-recursive transitionTo() call.
-        if (ourRecursionCount == 1) {
-            m_maxRecursionCount = 0;
+        if (ourRecursionDepth == 1) {
+            m_recursionDepth = 0;
         }
     } // transitionTo()
 
     /**
      * Indicate to the state machine that an event was handled and event bubbling should stop.
-     * This function should be called only inside state onEvent() functions.
-     * 
-     * Calling transitionTo() from within a state's onEvent() function will also stop event bubbling.
+     * This function should be called only inside state event() functions.
+     *
+     * Calling transitionTo() from within a state's event() function will also stop event bubbling.
      */
     void eventHandled() {
         m_eventHandledCalled = true;
@@ -288,7 +284,7 @@ protected:
     /**
      * Keeps track of how many times transitionTo() has been called recursively.
      */
-    uint32_t m_maxRecursionCount = 0;
+    uint32_t m_recursionDepth = 0;
 
     /**
      * Observers. Default constructed (unbound) until set via the corresponding setter. Unbound
