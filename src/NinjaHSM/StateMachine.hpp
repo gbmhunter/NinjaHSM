@@ -114,7 +114,11 @@ public:
         m_eventHandledCalled = false;
         const State<EventType>* stateToHandleEvent = m_currentState;
         while (stateToHandleEvent != nullptr) {
-            stateToHandleEvent->event(event);
+            // A state may have no event() handler (an unbound delegate); skip it so the event
+            // bubbles up to the parent.
+            if (stateToHandleEvent->event.is_valid()) {
+                stateToHandleEvent->event(event);
+            }
             if (m_transitionToCalled || m_eventHandledCalled) {
                 break;
             }
@@ -243,7 +247,10 @@ protected:
      * @param[in] state The state to enter.
      */
     void enterState(const State<EventType>* state) {
-        state->entry();
+        // The state may have no entry() handler (an unbound delegate).
+        if (state->entry.is_valid()) {
+            state->entry();
+        }
         if (m_transitionObserver.is_valid()) {
             m_transitionObserver(*state, TransitionAction::Entry);
         }
@@ -255,7 +262,10 @@ protected:
      * @param[in] state The state to exit.
      */
     void exitState(const State<EventType>* state) {
-        state->exit();
+        // The state may have no exit() handler (an unbound delegate).
+        if (state->exit.is_valid()) {
+            state->exit();
+        }
         if (m_transitionObserver.is_valid()) {
             m_transitionObserver(*state, TransitionAction::Exit);
         }

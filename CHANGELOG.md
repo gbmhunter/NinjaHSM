@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `makeState()` now accepts `nullptr` for any of its three handler slots (entry/event/exit), so states no longer need empty stub methods for handlers they do not use. All three slots remain mandatory (positional); a `nullptr` slot leaves that delegate unbound and the state machine skips calling it. A state with no `event()` handler simply lets events bubble up to its parent.
+
 ### Changed
 
 - Made `StateMachine::getCurrentState()` `const` so it can be called on a `const StateMachine&` (it already returned a `const` pointer).

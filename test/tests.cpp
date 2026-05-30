@@ -1020,6 +1020,150 @@ TEST(MakeStateTests, BuildsUsableStates) {
 }
 
 //============================================================================================//
+// makeState() with omitted (nullptr) handlers
+//============================================================================================//
+
+/**
+ * An HSM whose states omit some handlers by passing nullptr to makeState(), instead of writing
+ * empty stub methods. Layout:
+ *
+ *   parent      (entry + event + exit)
+ *     |-- child (no event(): events should bubble up to parent)
+ *   onlyEvent   (no entry()/exit(): a leaf that just reacts to events)
+ *   bare        (no handlers at all)
+ */
+class PartialHandlerHsm {
+public:
+    PartialHandlerHsm() :
+      parent(makeState<Event,
+        &PartialHandlerHsm::parent_entry,
+        &PartialHandlerHsm::parent_event,
+        &PartialHandlerHsm::parent_exit>("Parent", *this)),
+      child(makeState<Event,
+        &PartialHandlerHsm::child_entry,
+        nullptr,
+        &PartialHandlerHsm::child_exit>("Child", *this, &parent)),
+      onlyEvent(makeState<Event,
+        nullptr,
+        &PartialHandlerHsm::onlyEvent_event,
+        nullptr>("OnlyEvent", *this)),
+      bare(makeState<Event,
+        nullptr,
+        nullptr,
+        nullptr>("Bare", *this)),
+      m_stateMachine() {}
+
+    void initialTransitionTo(State<Event>& state) { m_stateMachine.initialTransitionTo(state); }
+    void handleEvent(const Event& event) { m_stateMachine.handleEvent(event); }
+    const State<Event>* getCurrentState() { return m_stateMachine.getCurrentState(); }
+
+    void parent_entry() { parentEntryCallCount++; }
+    void parent_event(const Event& event) {
+        if (event.id == EventId::GO_TO_STATE_1A) {
+            m_stateMachine.transitionTo(child);
+        }
+        parentEventCallCount++;
+    }
+    void parent_exit() { parentExitCallCount++; }
+
+    void child_entry() { childEntryCallCount++; }
+    void child_exit() { childExitCallCount++; }
+
+    void onlyEvent_event(const Event& event) { onlyEventEventCallCount++; }
+
+    State<Event> parent;
+    State<Event> child;
+    State<Event> onlyEvent;
+    State<Event> bare;
+    StateMachine<Event> m_stateMachine;
+
+    uint32_t parentEntryCallCount = 0;
+    uint32_t parentEventCallCount = 0;
+    uint32_t parentExitCallCount = 0;
+    uint32_t childEntryCallCount = 0;
+    uint32_t childExitCallCount = 0;
+    uint32_t onlyEventEventCallCount = 0;
+};
+
+TEST(MakeStateTests, NullptrHandlerSlotsLeaveDelegatesUnbound) {
+    PartialHandlerHsm hsm;
+
+    // Slots passed a member function pointer are bound; nullptr slots are left unbound.
+    EXPECT_TRUE(hsm.parent.entry.is_valid());
+    EXPECT_TRUE(hsm.parent.event.is_valid());
+    EXPECT_TRUE(hsm.parent.exit.is_valid());
+
+    EXPECT_TRUE(hsm.child.entry.is_valid());
+    EXPECT_FALSE(hsm.child.event.is_valid());
+    EXPECT_TRUE(hsm.child.exit.is_valid());
+
+    EXPECT_FALSE(hsm.onlyEvent.entry.is_valid());
+    EXPECT_TRUE(hsm.onlyEvent.event.is_valid());
+    EXPECT_FALSE(hsm.onlyEvent.exit.is_valid());
+
+    EXPECT_FALSE(hsm.bare.entry.is_valid());
+    EXPECT_FALSE(hsm.bare.event.is_valid());
+    EXPECT_FALSE(hsm.bare.exit.is_valid());
+}
+
+TEST(MakeStateTests, StateWithoutEntryOrExitCanBeEnteredAndExited) {
+    PartialHandlerHsm hsm;
+
+    // Entering a state with no entry() handler must not crash, and the state must become current.
+    hsm.initialTransitionTo(hsm.onlyEvent);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.onlyEvent);
+
+    // Its event() handler still fires.
+    {
+        Event event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.onlyEventEventCallCount, 1);
+
+    // Exiting a state with no exit() handler must not crash either.
+    hsm.initialTransitionTo(hsm.parent);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.parent);
+    EXPECT_EQ(hsm.parentEntryCallCount, 1);
+}
+
+TEST(MakeStateTests, EventBubblesPastStateWithNoEventHandler) {
+    PartialHandlerHsm hsm;
+
+    hsm.initialTransitionTo(hsm.parent);
+    {
+        Event event(EventId::GO_TO_STATE_1A);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.child);
+    EXPECT_EQ(hsm.childEntryCallCount, 1);
+
+    // The child has no event() handler, so the next event should bubble straight up to the parent.
+    const uint32_t parentEventsBefore = hsm.parentEventCallCount;
+    {
+        Event event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.parentEventCallCount, parentEventsBefore + 1);
+}
+
+TEST(MakeStateTests, StateWithNoHandlersAtAllIsHarmless) {
+    PartialHandlerHsm hsm;
+
+    // Entering, handling an event in, and leaving a state with no handlers must all be no-ops
+    // rather than crashes.
+    hsm.initialTransitionTo(hsm.bare);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.bare);
+    {
+        Event event(EventId::NO_ONE_HANDLES_THIS);
+        hsm.handleEvent(event);
+    }
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.bare);
+
+    hsm.initialTransitionTo(hsm.onlyEvent);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.onlyEvent);
+}
+
+//============================================================================================//
 // Observers (transition / unhandled event / error)
 //============================================================================================//
 
