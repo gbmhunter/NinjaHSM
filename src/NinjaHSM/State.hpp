@@ -58,26 +58,65 @@ public:
  * macro), the owning class name is not repeated, and the only type you must spell out is the
  * event type. @p Self is deduced from @p self.
  *
+ * All three handler slots are mandatory, but any of them may be @c nullptr if the state does not
+ * need that handler. This avoids having to write empty stub methods. For example, a leaf state
+ * that only reacts to events (no entry/exit work) is:
+ *
+ * @code
+ * State<Event> m_state1 = makeState<Event,
+ *     nullptr,                          // no entry()
+ *     &MyStateMachine::state1_event,
+ *     nullptr>("State1", *this);        // no exit()
+ * @endcode
+ *
+ * A nullptr slot leaves the corresponding delegate unbound; the state machine skips calling it
+ * (see StateMachine). An unbound event() handler simply lets the event bubble up to the parent.
+ *
  * @tparam EventType The state machine's event type.
- * @tparam Entry     Pointer to the member function to use as the entry() handler, e.g.
- *                   &MyStateMachine::state1_entry. Must have signature void().
- * @tparam Event     Pointer to the member function to use as the event() handler. Must have
- *                   signature void(const EventType&).
- * @tparam Exit      Pointer to the member function to use as the exit() handler. Must have
- *                   signature void().
+ * @tparam Entry     Pointer to the member function to use as the entry() handler (e.g.
+ *                   &MyStateMachine::state1_entry, signature void()), or nullptr for no entry().
+ * @tparam Event     Pointer to the member function to use as the event() handler (signature
+ *                   void(const EventType&)), or nullptr for no event().
+ * @tparam Exit      Pointer to the member function to use as the exit() handler (signature
+ *                   void()), or nullptr for no exit().
  * @tparam Self      The class that owns the handler methods. Deduced from @p self.
  * @param[in] name   Human readable name for the state.
  * @param[in] self   The instance the handler methods are called on.
  * @param[in] parent Pointer to the parent state, or nullptr (the default) for a top-level state.
  * @return A fully constructed State.
  */
+namespace detail {
+
+/**
+ * Turn a handler member-function-pointer non-type template argument into a bound delegate, or
+ * an unbound (default constructed) delegate if the argument is nullptr. Used by makeState() so
+ * that any handler slot can be omitted by passing nullptr.
+ *
+ * @tparam Delegate The delegate type to produce (e.g. State<E>::EntryDelegate).
+ * @tparam Ptr      The member function pointer to bind, or nullptr.
+ * @tparam Self     The class that owns the member function. Deduced from @p self.
+ * @param[in] self  The instance the member function is called on.
+ * @return A bound delegate, or an unbound delegate if Ptr is nullptr.
+ */
+template <typename Delegate, auto Ptr, typename Self>
+Delegate bindOrEmpty(Self & self) {
+    if constexpr (Ptr == nullptr) {
+        (void)self;
+        return Delegate();
+    } else {
+        return Delegate::template create<Self, Ptr>(self);
+    }
+}
+
+} // namespace detail
+
 template <typename EventType, auto Entry, auto Event, auto Exit, typename Self>
 State<EventType> makeState(const char * name, Self & self, State<EventType> * parent = nullptr) {
     return State<EventType>(
         name,
-        State<EventType>::EntryDelegate::template create<Self, Entry>(self),
-        State<EventType>::EventDelegate::template create<Self, Event>(self),
-        State<EventType>::ExitDelegate::template create<Self, Exit>(self),
+        detail::bindOrEmpty<typename State<EventType>::EntryDelegate, Entry>(self),
+        detail::bindOrEmpty<typename State<EventType>::EventDelegate, Event>(self),
+        detail::bindOrEmpty<typename State<EventType>::ExitDelegate, Exit>(self),
         parent);
 }
 

@@ -265,6 +265,17 @@ private:
 
 `makeState()` takes the event type and the three handler member-function pointers as template arguments, followed by `(name, instance, parent)`. The `parent` argument defaults to `nullptr`, so top-level states can omit it. The owning class type is deduced from the `instance` argument.
 
+All three handler slots are mandatory, but any of them may be `nullptr` if the state does not need that handler --- this saves you writing empty stub methods. The slot is positional, so you always pass three arguments. For example, a leaf state that only reacts to events:
+
+```c++
+m_state1(makeState<Events::Generic,
+    nullptr,                          // no entry()
+    &MyStateMachine::state1_event,
+    nullptr>("State1", *this))        // no exit()
+```
+
+A `nullptr` handler is left unbound and is skipped at runtime. In particular, a state with no `event()` handler simply lets every event bubble up to its parent.
+
 If you prefer, you can still construct `State` objects directly with the underlying delegates (`State<Events::Generic>::EntryDelegate::create<MyStateMachine, &MyStateMachine::state1_entry>(*this)`, etc.) --- `makeState()` is simply a thin wrapper around that.
 
 Notice how in the `state1_event()` method, we listen to some events and take actions (like transitioning to a different state, or handling data passed in with the event). Also notice how we call methods on the `m_stateMachine` member to interact with the state machine.

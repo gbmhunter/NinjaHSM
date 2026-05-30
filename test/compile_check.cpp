@@ -19,6 +19,9 @@ public:
             &Machine::idle_entry, &Machine::idle_event, &Machine::idle_exit>("Idle", *this)),
         m_running(makeState<Event,
             &Machine::running_entry, &Machine::running_event, &Machine::running_exit>("Running", *this, &m_idle)),
+        // A state that omits its entry()/exit() handlers by passing nullptr (only reacts to events).
+        m_paused(makeState<Event,
+            nullptr, &Machine::paused_event, nullptr>("Paused", *this, &m_idle)),
         m_sm() {
         m_sm.setTransitionObserver(
             StateMachine<Event>::TransitionObserver::create<Machine, &Machine::onTransition>(*this));
@@ -41,8 +44,14 @@ private:
     void idle_exit() {}
 
     void running_entry() {}
-    void running_event(const Event& event) {}
+    void running_event(const Event& event) {
+        if (event.id == 2) {
+            m_sm.transitionTo(m_paused);
+        }
+    }
     void running_exit() {}
+
+    void paused_event(const Event& event) {}
 
     void onTransition(const State<Event>& state, TransitionAction action) {}
     void onUnhandledEvent(const Event& event) {}
@@ -50,6 +59,7 @@ private:
 
     State<Event> m_idle;
     State<Event> m_running;
+    State<Event> m_paused;
     StateMachine<Event> m_sm;
 };
 
