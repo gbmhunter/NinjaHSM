@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed dead commented-out `std::cout` debug code from `transitionTo()`.
 
+### Documentation
+
+- Documented how to recover from `Error::MaxRecursionDepthExceeded`: transition to a known-good state once control returns to your code (the internal recursion counter resets automatically once the outermost `transitionTo()` unwinds). Added a regression test covering this recovery.
+- Documented that `handleEvent()`/`transitionTo()` are not re-entrant and that a state machine instance should be driven from a single context (e.g. queue events from an ISR and drain them in the main loop).
+
 ## [1.3.0] - 2026-05-29
 
 ### Added

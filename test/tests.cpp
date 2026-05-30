@@ -1160,3 +1160,20 @@ TEST(ObserverTests, ErrorObserverFiresOnMaxRecursionDepthExceeded) {
     EXPECT_GE(hsm.errorCount, 1);
     EXPECT_EQ(hsm.lastError, Error::MaxRecursionDepthExceeded);
 }
+
+TEST(ObserverTests, CanRecoverByTransitioningToAKnownStateAfterMaxRecursionDepthExceeded) {
+    ObserverHsm hsm;
+
+    // Trip the max recursion depth guard. This leaves the current state indeterminate, but the
+    // internal recursion counter is reset once the outermost transitionTo() unwinds.
+    hsm.initialTransitionTo(hsm.loopA);
+    EXPECT_GE(hsm.errorCount, 1);
+
+    const int errorsAfterTrip = hsm.errorCount;
+
+    // The documented recovery: transition to a known-good state. This must succeed (no further
+    // error) and leave the state machine in that state.
+    hsm.initialTransitionTo(hsm.parent);
+    EXPECT_EQ(hsm.getCurrentState(), &hsm.parent);
+    EXPECT_EQ(hsm.errorCount, errorsAfterTrip);
+}
